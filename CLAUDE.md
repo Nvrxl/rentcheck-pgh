@@ -22,18 +22,21 @@ Run: `mvn compile exec:java` -> http://localhost:7070
    project. Never add calls to OpenAI/Gemini/Anthropic/Nemotron etc., never add LLM libraries,
    and generate report text from templates. Classical algorithms and classical ML are fine.
    (Using YOU to write the code is fine.)
-2. **Log AI help.** After a substantial contribution, remind the user to add a row to
-   `AI_USAGE.md` (tool, what was asked, what was used). Offer a ready-to-paste row.
-3. **Stay in your teammate's lane.** Backend files (`App`, `WprdcClient`, `ReportService`,
-   `Fields`) belong to Michael. Everything in `src/main/resources/public/` belongs to Connor.
-   `Models.java` and `docs/API_CONTRACT.md` are shared: if you change the JSON shape, say so
-   loudly and tell the user to notify the other person and update the contract doc.
+2. **Log AI help in YOUR OWN file.** After a substantial contribution, remind the user to add a
+   row to their own log: Michael -> `AI_USAGE.md`, Connor -> `AI_USAGE_CONNOR.md` (tool, what was
+   asked, what was used). Separate files on purpose, so the two of them never edit the same file.
+   Offer a ready-to-paste row.
+3. **Stay in your teammate's lane.** See "How we avoid stepping on each other" below.
+   Only edit files the user you're helping owns. `Models.java` and `docs/API_CONTRACT.md` are
+   shared: if you change the JSON shape, say so loudly and tell the user to notify the other
+   person and update the contract doc.
 4. **No secrets in git.** No API keys in code. Use environment variables.
 5. **Be honest in the product.** Never present a violation as proof of a bad landlord.
    "No records found" must never be presented as "safe". Sample data must stay labelled SAMPLE.
-6. **Don't invent facts about the data.** The real column names and status values are not yet
-   verified (see `Fields.java`). Check `/api/debug/fields` output before writing logic on them.
-   If you're unsure whether something exists, say so.
+6. **Don't invent facts about the data.** Column names in `Fields.java` are verified; other
+   assumptions are not. Check `/api/debug/fields`, `/api/debug/rows?address=...` and
+   `/api/debug/distinct?field=...` before writing logic on them. If you're unsure whether
+   something exists, say so.
 
 ## Working style
 - Small changes, one file or feature at a time, each runnable. Prefer standard library and
@@ -46,6 +49,39 @@ Run: `mvn compile exec:java` -> http://localhost:7070
   (address matching, scoring, owner matching), (3) polish. Cut scope before breaking the demo.
   "Small and working beats big and broken."
 - The deadline is real. If something is taking more than ~45 minutes, suggest a simpler path.
+
+## How we avoid stepping on each other
+**Who owns what** (only edit your own files):
+
+| Owner | Files |
+|---|---|
+| Michael | `src/main/java/**` (except `Models.java`), `pom.xml`, `AI_USAGE.md` |
+| Connor | `src/main/resources/public/**` (`index.html`, `style.css`, `app.js`, any images), `AI_USAGE_CONNOR.md`, the Devpost writeup and pitch |
+| Shared (rarely edit, tell the other person first) | `Models.java`, `docs/API_CONTRACT.md`, `docs/TASKS.md`, `README.md`, `CLAUDE.md` |
+
+**Habits**
+- Before starting work: GitHub Desktop -> Fetch origin -> Pull origin. After each finished chunk:
+  Commit -> Push origin. Push rejected? Pull first, then push again.
+- Need a change in the other person's file? Don't make it. Message them, or add a line to `docs/TASKS.md`.
+- The JSON contract: ADDING a field is safe (the page ignores unknown fields). Renaming or removing
+  one needs agreement first, because it breaks the other person's code.
+- Don't reformat, rename or move files you don't own. Never run "Reformat/Optimize imports on the
+  whole project" in IntelliJ.
+- Never commit `target/`, `.idea/` or secrets (already in `.gitignore`).
+- If GitHub Desktop reports a merge CONFLICT, stop. Don't click through blindly: ask the other person.
+- Connor can build the whole page against `/api/report/sample` (fake data, same shape as real data),
+  so he is never blocked waiting for the backend.
+
+## Facts about the data (verified against the real city data, Sat Sep 19 2026)
+- The city stores SEVERAL ROWS PER CASE (an inspection row, a re-inspection row, a detail row). The
+  backend merges them: each item in `violations` is ONE CASE, and `totalViolations` counts cases.
+- Each violation has `date` (issued), `resolvedDate` (or null), `caseId`, `codeSection` (or null),
+  and `code` (which currently holds the case type, e.g. "Refuse or Recycling Violations").
+- Roughly half of all city records are weeds/trash/junk; only about a quarter are building & fire
+  safety. So the risk rating is driven by building & fire safety problems only (`Categories.java`).
+- Statuses that mean unresolved: In Violation, In Court, Clean & Lien, Appealed.
+- The data only covers the City of Pittsburgh. "No records" can mean a clean address, a typo, or an
+  address outside the city: never present it as "safe".
 
 ## Read these first
 `README.md`, `docs/TASKS.md` (who does what), `docs/API_CONTRACT.md`.

@@ -1,6 +1,7 @@
 package pgh.rentcheck;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Makes addresses comparable. The city stores "1231 LAKEWOOD ST, Pittsburgh, PA 15220-"
@@ -39,6 +40,25 @@ public final class AddressNormalizer {
             out.append(ABBREVIATIONS.getOrDefault(token, token));
         }
         return out.toString();
+    }
+
+    private static final Set<String> STREET_SUFFIXES = Set.of(
+            "ST", "AVE", "RD", "DR", "BLVD", "LN", "CT", "PL", "TER", "HWY", "PKWY", "WAY", "CIR", "ALY", "SQ", "PLZ", "TRL");
+
+    /**
+     * Words to send to the city's search box. We drop a trailing "ST"/"AVE"/"BLVD" because the
+     * city might have written "BOULEVARD" where the user typed "Blvd": searching for the abbreviation
+     * would then find nothing. The exact check happens afterwards in {@link #matches}, which
+     * treats both spellings as the same.
+     *   "1829 McNary Blvd" -> "1829 MCNARY"
+     */
+    public static String searchTerms(String raw) {
+        String n = normalize(raw);
+        String[] tokens = n.split(" ");
+        if (tokens.length >= 3 && STREET_SUFFIXES.contains(tokens[tokens.length - 1])) {
+            return String.join(" ", java.util.Arrays.copyOf(tokens, tokens.length - 1));
+        }
+        return n;
     }
 
     /**
