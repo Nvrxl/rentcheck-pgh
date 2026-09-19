@@ -81,9 +81,14 @@ async function load(url) {
       throw new Error(detail || `Request failed (${res.status}).`);
     }
     render(data);
-    setStatus("");
+    // Say the result out loud for screen readers (the status area is a live region),
+    // and move keyboard focus to the results, because the disabled button just lost it.
+    setStatus(`Report loaded: ${RISK_LABELS[data.riskLevel] || "No records found"}, `
+      + `${data.totalViolations ?? 0} violations.`, "done");
+    document.getElementById("results-heading").focus();
   } catch (err) {
     setStatus(`Something went wrong: ${err.message} You can search again, or try the sample report.`, "error");
+    statusEl.focus();   // so keyboard and screen-reader users land on the error message
   } finally {
     button.disabled = false;
     button.textContent = "Check";
@@ -127,12 +132,14 @@ function render(r) {
   const body = document.getElementById("violations");
   body.replaceChildren(...violations.map((v) => {
     const tr = document.createElement("tr");
+    tr.setAttribute("role", "row");
     tr.appendChild(timelineCell(v));
     // data-label lets the CSS show each cell as "Label: value" on phones.
     const cells = [["Type", v.code], ["Description", v.description], ["Status", v.status]];
     for (const [label, value] of cells) {
       const td = document.createElement("td");
       td.dataset.label = label;
+      td.setAttribute("role", "cell");
       td.textContent = value || "-";
       tr.appendChild(td);
     }
@@ -199,6 +206,7 @@ function timelineText(v) {
 function timelineCell(v) {
   const td = document.createElement("td");
   td.dataset.label = "Timeline";
+  td.setAttribute("role", "cell");
 
   const { text, open } = timelineText(v);
   const main = document.createElement("div");

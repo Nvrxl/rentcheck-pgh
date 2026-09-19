@@ -6,18 +6,27 @@
   --line: #e2e6eb;
   --accent: #b8860b;            /* Pittsburgh gold: buttons and highlights */
   --link: #8a6300;              /* darker gold for text links, so they're readable on white */
-  --low: #1f8a4c;
-  --medium: #c77700;
+  /* Badge colors are dark enough for white text to pass WCAG AA contrast (4.5:1). */
+  --low: #1a7a42;
+  --medium: #a35c00;
   --high: #c62828;
+  --danger-text: #c62828;       /* red used for text ("Still unresolved", errors) */
   --unknown: #6b7480;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #14171b; --card: #1e2329; --text: #eceff3; --muted: #9aa4af; --line: #2c333b;
     --accent: #e0b23a; --link: #e8c35a;
+    --danger-text: #ff8a80;     /* dark red text is unreadable on a dark background */
   }
 }
 * { box-sizing: border-box; }
+
+/* Hidden on screen but still read by screen readers (standard technique). */
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
 
 /* Faded Pittsburgh bridge behind the whole page.
    position: fixed pins it to the window, so it stays put while you scroll;
@@ -61,9 +70,11 @@ h2 { font-size: 1.1rem; margin: 28px 0 8px; }
 a { color: var(--link); }
 
 #status { min-height: 1.5em; color: var(--muted); }
+#status:focus, #results-heading:focus { outline: none; }  /* focused by code, not by the user */
+#status.done { min-height: 0; height: 0; overflow: hidden; }  /* announced, not shown */
 #status.error {
-  color: var(--high); font-weight: 600; background: var(--card);
-  border: 1px solid var(--high); border-radius: 8px; padding: 10px 14px;
+  color: var(--danger-text); font-weight: 600; background: var(--card);
+  border: 1px solid var(--danger-text); border-radius: 8px; padding: 10px 14px;
 }
 .no-records { margin-top: 16px; border-left: 4px solid var(--unknown); }
 .no-records h2 { margin-top: 0; }
@@ -75,12 +86,14 @@ a { color: var(--link); }
   border-radius: 50%; animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* People who get dizzy from motion can ask their OS to reduce it; respect that. */
+@media (prefers-reduced-motion: reduce) { #status.loading::before { animation: none; } }
 
 .sample-banner {
   background: var(--accent); color: #111; font-weight: 700; text-align: center;
   padding: 8px 12px; border-radius: 8px; margin: 0 0 12px;
 }
-.searched { color: var(--muted); margin: 0 0 8px; }
+.searched { color: var(--muted); margin: 0 0 8px; font-size: 1rem; font-weight: 400; }
 .empty { color: var(--muted); font-style: italic; margin: 0; }
 
 .card {
@@ -117,7 +130,7 @@ a { color: var(--link); }
 }
 
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
-.unresolved { color: var(--high); font-weight: 600; }
+.unresolved { color: var(--danger-text); font-weight: 600; }
 .case-meta { display: block; color: var(--muted); font-size: .8rem; margin-top: 2px; }
 table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; }
 th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: .9rem; vertical-align: top; }
@@ -139,7 +152,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .how-we-score { margin-top: 28px; }
 .how-we-score summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; }
 .how-we-score p { margin: 10px 0 0; }
-.draft-tag { color: var(--medium); font-size: .85rem; font-weight: 600; }
+.draft-tag { color: var(--muted); font-size: .85rem; font-weight: 600; }
 
 footer { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px; color: var(--muted); font-size: .8rem; }
 
