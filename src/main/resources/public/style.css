@@ -41,7 +41,14 @@ h2 { font-size: 1.1rem; margin: 28px 0 8px; }
 a { color: var(--accent); }
 
 #status { min-height: 1.5em; color: var(--muted); }
-#status.error { color: var(--high); font-weight: 600; }
+#status.error {
+  color: var(--high); font-weight: 600; background: var(--card);
+  border: 1px solid var(--high); border-radius: 8px; padding: 10px 14px;
+}
+.no-records { margin-top: 16px; border-left: 4px solid var(--unknown); }
+.no-records h2 { margin-top: 0; }
+.no-records ul { padding-left: 20px; }
+.no-records li { margin: 4px 0; }
 #status.loading::before {
   content: ""; display: inline-block; width: .9em; height: .9em; margin-right: 8px;
   vertical-align: -2px; border: 2px solid var(--line); border-top-color: var(--accent);
@@ -97,12 +104,24 @@ th { color: var(--muted); font-weight: 600; }
 .also-check ul { margin: 0; padding-left: 20px; }
 .also-check li { margin: 4px 0; }
 
+.how-we-score { margin-top: 28px; }
+.how-we-score summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; }
+.how-we-score p { margin: 10px 0 0; }
+.draft-tag { color: var(--medium); font-size: .85rem; font-weight: 600; }
+
 footer { margin-top: 40px; color: var(--muted); font-size: .8rem; }
 
 @media (max-width: 520px) {
-  .stats { grid-template-columns: 1fr; }
+  /* Keep the 3 stats side by side on phones, just smaller, so the report isn't a long scroll. */
+  .stats { gap: 8px; }
+  .stats .card { padding: 10px 6px; }
+  .stats b { font-size: 1.1rem; }
+  .stats small { font-size: .75rem; line-height: 1.2; display: block; }
   .headline { flex-direction: column; }
   #search-form { flex-direction: column; }
+  #search-form input, #search-form button { font-size: 16px; } /* 16px stops iPhones zooming in on tap */
+  main { padding-top: 20px; }
+  h1 { font-size: 1.6rem; }
   /* Phones: turn each table row into a small card instead of scrolling sideways. */
   table, tbody, tr, td { display: block; width: 100%; }
   thead { display: none; }

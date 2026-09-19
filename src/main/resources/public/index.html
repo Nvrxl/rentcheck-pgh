@@ -39,6 +39,20 @@
 
       <p id="note" class="note"></p>
 
+      <!-- Shown instead of the lists when nothing matched. Must never read as "this building is safe". -->
+      <div id="no-records" class="card no-records" hidden>
+        <h2>No violation records found. That does not mean the building is safe.</h2>
+        <p>Some reasons nothing showed up:</p>
+        <ul>
+          <li>The city may write the address differently. Try just the number and street
+            (e.g. "1231 Lakewood St"), without an apartment or unit number.</li>
+          <li>Problems only get a record if someone reports them and an inspector visits.</li>
+          <li>City data can lag behind what is happening in the building today.</li>
+        </ul>
+        <p>Before you sign, tour the unit yourself and ask the landlord about past repairs.</p>
+      </div>
+
+      <div id="details">
       <h2>Top categories</h2>
       <ul id="categories"></ul>
       <p id="categories-empty" class="empty" hidden>No categories to show.</p>
@@ -51,6 +65,7 @@
           <tbody id="violations"></tbody>
         </table>
       </div>
+      </div>
 
       <div id="also-check" class="card also-check" hidden>
         <h2>Also check</h2>
@@ -62,6 +77,23 @@
         <p class="note">Reviews come from other websites and may be unreliable.</p>
       </div>
     </section>
+
+    <!-- PLACEHOLDER wording: Michael will send the final text (docs/HOW_WE_SCORE.md). -->
+    <!-- <details> is a built-in HTML dropdown: click the title to open or close it, no JavaScript. -->
+    <details id="how-we-score" class="card how-we-score">
+      <summary>How we score this</summary>
+      <p class="draft-tag">Draft: final wording coming soon.</p>
+      <p>The rating is driven mainly by <b>building and fire safety</b> violations
+        (things like structural problems, fire hazards, electrical and heating issues),
+        especially ones that are still unresolved.</p>
+      <p>Most city records are about trash, weeds and debris outside the property. By our count
+        that is about half of all records. They are still listed in the report, but they count
+        much less, because they say little about whether an apartment is safe to live in.</p>
+      <p>Everything is plain rules written in code. No AI or language model is involved, and
+        the same records always give the same rating.</p>
+      <p>A rating is a starting point for your own questions, not a verdict on the landlord.
+        "No records found" is never treated as safe.</p>
+    </details>
 
     <footer>
       Data: City of Pittsburgh via WPRDC. Not legal advice. A violation is not proof of a bad landlord.

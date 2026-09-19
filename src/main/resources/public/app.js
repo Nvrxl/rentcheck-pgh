@@ -50,6 +50,7 @@ async function load(url) {
   setStatus("Searching city records... (this can take a few seconds)", "loading");
   reportEl.hidden = true;
   button.disabled = true;
+  button.textContent = "Checking...";
   try {
     let res;
     try {
@@ -69,9 +70,10 @@ async function load(url) {
     render(data);
     setStatus("");
   } catch (err) {
-    setStatus(`Something went wrong: ${err.message}`, "error");
+    setStatus(`Something went wrong: ${err.message} You can search again, or try the sample report.`, "error");
   } finally {
     button.disabled = false;
+    button.textContent = "Check";
   }
 }
 
@@ -97,7 +99,7 @@ function render(r) {
   document.getElementById("summary").textContent = r.summary || "";
   document.getElementById("stat-total").textContent = r.totalViolations ?? 0;
   document.getElementById("stat-open").textContent = r.openViolations ?? 0;
-  document.getElementById("stat-recent").textContent = r.mostRecent || "-";
+  document.getElementById("stat-recent").textContent = niceDate(r.mostRecent) || r.mostRecent || "-";
   document.getElementById("note").textContent = r.note || "";
 
   const cats = document.getElementById("categories");
@@ -122,6 +124,11 @@ function render(r) {
     }
     return tr;
   }));
+  // Nothing matched at all: swap the empty lists for the "no records is not the same as safe" box.
+  const nothingFound = violations.length === 0 && !(r.totalViolations > 0);
+  document.getElementById("no-records").hidden = !nothingFound;
+  document.getElementById("details").hidden = nothingFound;
+
   document.getElementById("violations-table").hidden = violations.length === 0;
   document.getElementById("violations-empty").hidden = violations.length > 0;
 
