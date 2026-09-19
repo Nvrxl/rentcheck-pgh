@@ -42,6 +42,7 @@ Response 200:
     "context": "The county lists this as university or college property for tax purposes, not as housing...",
     "note": "From Allegheny County assessment records..."
   },
+  "neighborhood": { "name": "Central Oakland", "rank": 12, "per1000": 0.5, "openRecent": 3, "rankedBy": "per1000" },
   "questions": [
     "The city lists 1 building or fire safety case here that looks unresolved. Ask what has been done about it, when it will be fixed, and get the answer in writing.",
     "How do I report a repair, and how quickly are repairs usually done? Can I see the most recent inspection report?"
@@ -58,6 +59,7 @@ Response 200:
   - `ownerType` is "an individual" or "a company". **There are no owner names** anywhere: the county excludes them by ordinance. Never imply we know who the landlord is.
   - `ownerOccupied` is `true` or `null`, never `false`. `true` means someone claimed the homestead tax reduction, which only applies to a home the owner lives in. `null` means unknown, NOT "it is a rental".
   - Always show `note` in small text under the card.
+- `neighborhood` (NEW, this is Connor's proposed field, built exactly as proposed) says where the address sits on the Neighborhoods ranking, or `null`. `name` is the city's own neighborhood for the matched records (the most common one, since a corner address can be tagged differently on different cases). `rank`, `per1000`, `openRecent` and `rankedBy` are copied from `/api/neighborhoods`, and any of them can be `null` — while the ranking is still loading, or for a neighborhood that can't be ranked, you get the name and nulls. The report never waits for the ranking to load.
 - `riskLevel` is one of `LOW`, `MEDIUM`, `HIGH`, `UNKNOWN`. `UNKNOWN` means no records found (NOT "safe").
 - Any field except `query` and the counts may be `null` or empty. The page must handle that.
 - `violations` is newest first. **Each entry is one city CASE**, not one row: the city stores several rows per case (inspection, re-inspection, detail), and the backend merges them. `totalViolations` counts cases.
@@ -123,13 +125,6 @@ The neighborhoods closest to a spot (e.g. the browser's location), closest first
 Developer-only pages (`fields`, `rows`, `hotspots`, `distinct`, `population`). Not for the public page.
 
 ## Planned additions (add here when agreed, before coding them)
-- **PROPOSED by Connor, not agreed yet:** `neighborhood` in `/api/report`, so the report can say
-  "This address is in Central Oakland: rank 12 on the Neighborhoods list". Suggested shape (or `null`
-  when unknown or the neighborhood data is still loading):
-  `"neighborhood": { "name": "Central Oakland", "rank": 12, "per1000": 0.5, "openRecent": 3, "rankedBy": "per1000" }`.
-  `name` = the city's `neighborhood` column on the matched records (most common value); the rest copied
-  from the `/api/neighborhoods` entry with that name. The page already handles this field and hides the
-  line when it's missing, so field names must match exactly (or tell Connor what you changed).
 - `latitude` / `longitude` (numbers or null) in `/api/report`, for a map pin.
 - Property facts (year built, commercial or residential) from county assessment data, if the columns check out.
 - ~~`owner` block for owner matching~~: dropped. The county's open property data deliberately excludes owner names.
