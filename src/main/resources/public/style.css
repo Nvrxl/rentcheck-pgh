@@ -40,10 +40,21 @@
    z-index: -1 keeps it behind every element; pointer-events: none means it can't block clicks. */
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background: url("bridge.svg") no-repeat center bottom 8vh / min(1400px, 140vw) auto;
+  background: url("bridge-animated.svg") no-repeat center bottom 8vh / min(1400px, 140vw) auto;
   opacity: .3;
 }
-:root[data-theme="light"] body::before { opacity: .22; }
+/* Sun and birds in the top-right corner: a second fixed layer, also behind everything. */
+body::after {
+  content: ""; position: fixed; top: 0; right: 0; z-index: -1; pointer-events: none;
+  width: min(460px, 70vw); aspect-ratio: 420 / 200;
+  background: url("sky.svg") no-repeat right top / contain;
+  opacity: .3;
+}
+:root[data-theme="light"] body::before, :root[data-theme="light"] body::after { opacity: .22; }
+/* Still bridge (no cars moving) when the device asks for less motion, or after "Pause animation". */
+@media (prefers-reduced-motion: reduce) { body::before { background-image: url("bridge.svg"); } }
+:root.motion-paused body::before { background-image: url("bridge.svg"); }
+.motion-toggle { margin-left: 8px; font-size: inherit; }
 body {
   margin: 0; background: var(--bg); color: var(--text);
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -265,7 +276,8 @@ footer { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px;
     --bg: #fff; --card: #fff; --text: #000; --muted: #444; --line: #bbb;
     --link: #000; --danger-text: #000; color-scheme: light;
   }
-  body::before { display: none; }              /* no bridge background */
+  body::before, body::after { display: none; } /* no bridge, sun or birds on paper */
+  .motion-toggle { display: none; }
   main { max-width: none; padding: 0; }
   header .tagline, .tabs, .theme-toggle, #search-form, .source, .examples, .hint, #status,
   #print-report, #place, #also-check, .hood-line a, #how-we-score { display: none !important; }

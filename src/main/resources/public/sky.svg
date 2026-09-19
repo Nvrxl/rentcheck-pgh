@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 200" fill="none" stroke="#8a929c" stroke-linecap="round" stroke-linejoin="round">
+<!-- Drawn for RentCheck PGH: sun and birds for the top-right corner of the background. -->
+<circle cx="330" cy="80" r="34" stroke-width="3"/>
+<line x1="376.0" y1="80.0" x2="392.0" y2="80.0" stroke-width="3"/>
+<line x1="369.8" y1="103.0" x2="383.7" y2="111.0" stroke-width="3"/>
+<line x1="353.0" y1="119.8" x2="361.0" y2="133.7" stroke-width="3"/>
+<line x1="330.0" y1="126.0" x2="330.0" y2="142.0" stroke-width="3"/>
+<line x1="307.0" y1="119.8" x2="299.0" y2="133.7" stroke-width="3"/>
+<line x1="290.2" y1="103.0" x2="276.3" y2="111.0" stroke-width="3"/>
+<line x1="284.0" y1="80.0" x2="268.0" y2="80.0" stroke-width="3"/>
+<line x1="290.2" y1="57.0" x2="276.3" y2="49.0" stroke-width="3"/>
+<line x1="307.0" y1="40.2" x2="299.0" y2="26.3" stroke-width="3"/>
+<line x1="330.0" y1="34.0" x2="330.0" y2="18.0" stroke-width="3"/>
+<line x1="353.0" y1="40.2" x2="361.0" y2="26.3" stroke-width="3"/>
+<line x1="369.8" y1="57.0" x2="383.7" y2="49.0" stroke-width="3"/>
+<path transform="translate(120,70) scale(1.0)" d="M-16,0 Q-8,-10 0,0 Q8,-10 16,0" stroke-width="2.5"/>
+<path transform="translate(160,48) scale(0.8)" d="M-16,0 Q-8,-10 0,0 Q8,-10 16,0" stroke-width="2.5"/>
+<path transform="translate(95,110) scale(0.7)" d="M-16,0 Q-8,-10 0,0 Q8,-10 16,0" stroke-width="2.5"/>
+<path transform="translate(200,120) scale(0.9)" d="M-16,0 Q-8,-10 0,0 Q8,-10 16,0" stroke-width="2.5"/>
+<path transform="translate(150,150) scale(0.6)" d="M-16,0 Q-8,-10 0,0 Q8,-10 16,0" stroke-width="2.5"/>
+</svg>
