@@ -12,6 +12,12 @@ const reportEl = document.getElementById("report");
 // Stays null for the sample report, because that address is fake.
 let searchedAddress = null;
 
+// Each search gets a number. If you click a second search before the first answers,
+// only the newest one is allowed to update the page (otherwise a slow old answer could
+// show the report for the wrong address).
+let latestRequest = 0;
+const TIMEOUT_MS = 25000;   // give up after 25 s instead of spinning forever (demo safety)
+
 // What renters see instead of the raw riskLevel codes.
 // "UNKNOWN" means no records were found, which is NOT the same as safe.
 const RISK_LABELS = {
@@ -58,12 +64,6 @@ if (startAddress) {
   searchedAddress = startAddress;
   load(`/api/report?address=${encodeURIComponent(startAddress)}`);
 }
-
-// Each search gets a number. If you click a second search before the first answers,
-// only the newest one is allowed to update the page (otherwise a slow old answer could
-// show the report for the wrong address).
-let latestRequest = 0;
-const TIMEOUT_MS = 25000;   // give up after 25 s instead of spinning forever (demo safety)
 
 async function load(url) {
   const requestId = ++latestRequest;
@@ -169,6 +169,7 @@ function render(r) {
   renderAlsoCheck(searchedAddress);
   renderPlace(searchedAddress);
   renderProperty(r.property);
+  renderWalk(searchedAddress);
   renderQuestions(r.questions);
   renderNeighborhood(r.neighborhood);
   reportEl.hidden = false;
@@ -349,4 +350,49 @@ function renderProperty(p) {
 
   document.getElementById("property-note").textContent = p.note || "From Allegheny County assessment records.";
   card.hidden = false;
+}
+
+// ---------------------------------------------------------------------------
+// "How far is the walk to campus?": Google Maps walking directions from the searched address
+// to the chosen school. Google computes the real route and time; we don't estimate it ourselves.
+// Addresses checked Sep 19 2026 (swpenna.com college guide; CCAC's own "for visiting" address).
+// ---------------------------------------------------------------------------
+const SCHOOLS = [
+  ["University of Pittsburgh", "4200 Fifth Ave, Pittsburgh, PA 15260"],
+  ["Carnegie Mellon University", "5000 Forbes Ave, Pittsburgh, PA 15213"],
+  ["Duquesne University", "600 Forbes Ave, Pittsburgh, PA 15282"],
+  ["Carlow University", "3333 Fifth Ave, Pittsburgh, PA 15213"],
+  ["Chatham University", "1 Woodland Rd, Pittsburgh, PA 15232"],
+  ["Point Park University", "201 Wood St, Pittsburgh, PA 15222"],
+  ["CCAC Allegheny Campus", "808 Ridge Ave, Pittsburgh, PA 15212"],
+];
+
+const schoolSelect = document.getElementById("school");
+schoolSelect.append(...SCHOOLS.map(([name], i) => Object.assign(document.createElement("option"), { value: i, textContent: name })));
+try { schoolSelect.value = localStorage.getItem("school") || ""; } catch { /* storage blocked: fine */ }
+schoolSelect.addEventListener("change", () => {
+  try { localStorage.setItem("school", schoolSelect.value); } catch { /* not remembered: fine */ }
+  renderWalk(searchedAddress);
+});
+
+function renderWalk(address) {
+  document.getElementById("walk").hidden = !address;   // hidden for the sample report (fake address)
+  const result = document.getElementById("walk-result");
+  const school = SCHOOLS[schoolSelect.value];
+  if (!address || !school) { result.hidden = true; return; }
+
+  const [name, schoolAddress] = school;
+  // Google's documented "Maps URLs" format: no API key needed, travelmode=walking.
+  const url = "https://www.google.com/maps/dir/?api=1"
+    + `&origin=${encodeURIComponent(`${address}, Pittsburgh, PA`)}`
+    + `&destination=${encodeURIComponent(schoolAddress)}`
+    + "&travelmode=walking";
+  const link = document.createElement("a");
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = `See the walking route and time to ${name}`;
+  link.appendChild(Object.assign(document.createElement("span"), { className: "visually-hidden", textContent: " (opens in a new tab)" }));
+  result.replaceChildren(link);
+  result.hidden = false;
 }

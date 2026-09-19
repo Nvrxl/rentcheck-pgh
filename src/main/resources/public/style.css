@@ -40,20 +40,26 @@
    z-index: -1 keeps it behind every element; pointer-events: none means it can't block clicks. */
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background: url("bridge-animated.svg") no-repeat center bottom 8vh / min(1400px, 140vw) auto;
+  background: url("bridge-animated-night.svg") no-repeat center bottom 8vh / min(1400px, 140vw) auto;
   opacity: .3;
 }
 /* Sun and birds in the top-right corner: a second fixed layer, also behind everything. */
 body::after {
   content: ""; position: fixed; top: 0; right: 0; z-index: -1; pointer-events: none;
   width: min(460px, 70vw); aspect-ratio: 420 / 200;
-  background: url("sky.svg") no-repeat right top / contain;
+  background: url("sky-night.svg") no-repeat right top / contain;
   opacity: .3;
 }
 :root[data-theme="light"] body::before, :root[data-theme="light"] body::after { opacity: .22; }
-/* Still bridge (no cars moving) when the device asks for less motion, or after "Pause animation". */
-@media (prefers-reduced-motion: reduce) { body::before { background-image: url("bridge.svg"); } }
-:root.motion-paused body::before { background-image: url("bridge.svg"); }
+/* Day vs night: dark mode (the default) shows a moon and headlights; light mode shows the sun. */
+:root[data-theme="light"] body::before { background-image: url("bridge-animated.svg"); }
+:root[data-theme="light"] body::after { background-image: url("sky.svg"); }
+/* Still bridge (no traffic) when the device asks for less motion, or after "Pause animation".
+   These selectors are more specific than the day/night ones above, so they win in either theme. */
+@media (prefers-reduced-motion: reduce) {
+  :root body::before, :root[data-theme] body::before { background-image: url("bridge.svg"); }
+}
+:root.motion-paused body::before, :root.motion-paused[data-theme] body::before { background-image: url("bridge.svg"); }
 .motion-toggle { margin-left: 8px; font-size: inherit; }
 body {
   margin: 0; background: var(--bg); color: var(--text);
@@ -175,6 +181,13 @@ tbody tr:last-child td { border-bottom: 0; }
 .facts dt { color: var(--muted); font-weight: 600; }
 .facts dd { margin: 0; }
 @media (max-width: 520px) { .facts { grid-template-columns: 1fr; gap: 0; } .facts dd { margin-bottom: 8px; } }
+.walk { margin-top: 16px; }
+.walk h2 { margin: 0 0 4px; }
+.school-select {
+  width: 100%; max-width: 360px; padding: 10px 12px; font-size: 16px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text);
+}
+.walk-result { margin: 12px 0 0; font-weight: 600; }
 .questions { margin-top: 16px; }
 .questions h2 { margin: 0; }
 .questions .note { margin: 2px 0 10px; }
@@ -288,7 +301,7 @@ footer { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px;
   .motion-toggle { display: none; }
   main { max-width: none; padding: 0; }
   header .tagline, .tabs, .theme-toggle, #search-form, .source, .examples, .hint, #status,
-  #print-report, #place, #also-check, .hood-line a, #how-we-score { display: none !important; }
+  #print-report, #place, #also-check, #walk, .hood-line a, #how-we-score { display: none !important; }
   header { border: 0; margin-bottom: 8px; }
   .print-only { display: block; font-size: .8rem; color: #444; margin: 0 0 12px; }
   .card, .table-wrap { box-shadow: none; break-inside: avoid; }
