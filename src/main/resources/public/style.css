@@ -222,6 +222,18 @@ tbody tr:last-child td { border-bottom: 0; }
 .rental-links li { margin: 4px 0; }
 .link-note { display: block; color: var(--muted); }
 
+/* ---------- Print button, neighborhood line ---------- */
+.results-top { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px; }
+.results-top .searched { margin: 0; }
+.secondary-button {
+  padding: 6px 12px; font: inherit; font-size: .85rem; color: var(--text); background: var(--card);
+  border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+}
+.secondary-button:hover { border-color: var(--accent); }
+.hood-line { margin: 0 0 10px; color: var(--muted); }
+.hood-line b { color: var(--text); }
+.print-only { display: none; }
+
 footer { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px; color: var(--muted); font-size: .8rem; }
 
 @media (max-width: 520px) {
@@ -244,4 +256,24 @@ footer { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px;
   tr { border-bottom: 1px solid var(--line); padding: 8px 0; }
   td { border: 0; padding: 2px 12px; }
   td::before { content: attr(data-label) ": "; color: var(--muted); font-weight: 600; }
+}
+
+/* ---------- Paper version (Print / Save as PDF) ----------
+   Black on white to save ink, and only the report itself: no search box, tabs, buttons or map. */
+@media print {
+  :root, :root[data-theme="light"], :root[data-theme="dark"] {
+    --bg: #fff; --card: #fff; --text: #000; --muted: #444; --line: #bbb;
+    --link: #000; --danger-text: #000; color-scheme: light;
+  }
+  body::before { display: none; }              /* no bridge background */
+  main { max-width: none; padding: 0; }
+  header .tagline, .tabs, .theme-toggle, #search-form, .source, .examples, .hint, #status,
+  #print-report, #place, #also-check, .hood-line a, #how-we-score { display: none !important; }
+  header { border: 0; margin-bottom: 8px; }
+  .print-only { display: block; font-size: .8rem; color: #444; margin: 0 0 12px; }
+  .card, .table-wrap { box-shadow: none; break-inside: avoid; }
+  tr { break-inside: avoid; }
+  .unresolved { font-weight: 700; text-decoration: underline; }   /* red doesn't print: mark it another way */
+  .badge { border: 1px solid #000; color: #000 !important; background: #fff !important; }
+  .headline { border-left-color: #000 !important; }
 }

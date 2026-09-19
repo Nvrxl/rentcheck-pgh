@@ -100,6 +100,13 @@ The neighborhoods closest to a spot (e.g. the browser's location), closest first
 Developer-only pages (`fields`, `rows`, `hotspots`, `distinct`, `population`). Not for the public page.
 
 ## Planned additions (add here when agreed, before coding them)
+- **PROPOSED by Connor, not agreed yet:** `neighborhood` in `/api/report`, so the report can say
+  "This address is in Central Oakland: rank 12 on the Neighborhoods list". Suggested shape (or `null`
+  when unknown or the neighborhood data is still loading):
+  `"neighborhood": { "name": "Central Oakland", "rank": 12, "per1000": 0.5, "openRecent": 3, "rankedBy": "per1000" }`.
+  `name` = the city's `neighborhood` column on the matched records (most common value); the rest copied
+  from the `/api/neighborhoods` entry with that name. The page already handles this field and hides the
+  line when it's missing, so field names must match exactly (or tell Connor what you changed).
 - `latitude` / `longitude` (numbers or null) in `/api/report`, for a map pin.
 - Property facts (year built, commercial or residential) from county assessment data, if the columns check out.
 - ~~`owner` block for owner matching~~: dropped. The county's open property data deliberately excludes owner names.

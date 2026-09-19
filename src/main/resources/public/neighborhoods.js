@@ -80,6 +80,14 @@ function render(data) {
       " Not every city record could be loaded, so some counts may be too low.";
   }
   document.getElementById("ranking").hidden = false;
+
+  // Opened from a report link like neighborhoods.html?q=Central%20Oakland: pre-fill the filter.
+  const q = new URLSearchParams(location.search).get("q");
+  if (q) {
+    const filter = document.getElementById("filter");
+    filter.value = q;
+    filter.dispatchEvent(new Event("input"));
+  }
 }
 
 // Numbers with commas; "-" when missing.

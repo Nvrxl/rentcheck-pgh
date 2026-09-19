@@ -169,6 +169,7 @@ function render(r) {
   renderAlsoCheck(searchedAddress);
   renderPlace(searchedAddress);
   renderQuestions(r.questions);
+  renderNeighborhood(r.neighborhood);
   reportEl.hidden = false;
 }
 
@@ -267,4 +268,40 @@ function renderQuestions(questions) {
     li.append(box, label);
     return li;
   }));
+}
+
+// Print button: the browser's own print window, which also offers "Save as PDF".
+// style.css has an @media print section that hides the search box, tabs and map on paper.
+document.getElementById("print-report").addEventListener("click", () => {
+  const now = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  document.getElementById("print-stamp").textContent =
+    `Printed from RentCheck PGH on ${now}. Data: City of Pittsburgh via WPRDC. `
+    + "A violation is not proof of a bad landlord, and no records does not mean safe.";
+  window.print();
+});
+
+// "In Central Oakland: rank 12 on the Neighborhoods list". Uses the proposed `neighborhood` field
+// (see "Planned additions" in docs/API_CONTRACT.md). Hidden if the server doesn't send it yet.
+function renderNeighborhood(hood) {
+  const line = document.getElementById("hood-line");
+  if (!hood || !hood.name) { line.hidden = true; return; }
+
+  line.replaceChildren();
+  line.append("This address is in ");
+  line.appendChild(Object.assign(document.createElement("b"), { textContent: hood.name }));
+  if (hood.rank !== null && hood.rank !== undefined) {
+    const perThousand = hood.rankedBy === "per1000";
+    const value = perThousand ? hood.per1000 : hood.openRecent;
+    line.append(`: rank ${hood.rank} on the Neighborhoods list`
+      + (value !== null && value !== undefined
+        ? ` (${value} unresolved building & fire safety cases${perThousand ? " per 1,000 residents" : ""})` : "")
+      + ". ");
+  } else {
+    line.append(". It isn't ranked (no reliable population figure). ");
+  }
+  const link = document.createElement("a");
+  link.href = `neighborhoods.html?q=${encodeURIComponent(hood.name)}`;
+  link.textContent = "See the neighborhood ranking";
+  line.appendChild(link);
+  line.hidden = false;
 }
