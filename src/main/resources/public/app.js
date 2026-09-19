@@ -95,6 +95,7 @@ function render(r) {
   const badge = document.getElementById("risk-badge");
   badge.textContent = RISK_LABELS[risk];
   badge.className = `badge ${risk}`;
+  document.getElementById("headline").className = `card headline risk-${risk}`;
 
   document.getElementById("summary").textContent = r.summary || "";
   document.getElementById("stat-total").textContent = r.totalViolations ?? 0;

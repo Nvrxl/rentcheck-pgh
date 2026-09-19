@@ -4,7 +4,8 @@
   --text: #1b1f24;
   --muted: #5b6570;
   --line: #e2e6eb;
-  --accent: #b8860b;            /* Pittsburgh gold */
+  --accent: #b8860b;            /* Pittsburgh gold: buttons and highlights */
+  --link: #8a6300;              /* darker gold for text links, so they're readable on white */
   --low: #1f8a4c;
   --medium: #c77700;
   --high: #c62828;
@@ -13,7 +14,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #14171b; --card: #1e2329; --text: #eceff3; --muted: #9aa4af; --line: #2c333b;
-    --accent: #e0b23a;
+    --accent: #e0b23a; --link: #e8c35a;
   }
 }
 * { box-sizing: border-box; }
@@ -22,23 +23,30 @@ body {
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
-h1 { margin: 0; font-size: 2rem; }
+header { border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+h1 { margin: 0; font-size: 2rem; letter-spacing: -.02em; }
 h1 span { color: var(--accent); }
 h2 { font-size: 1.1rem; margin: 28px 0 8px; }
-.tagline { color: var(--muted); margin: 4px 0 24px; }
+.tagline { color: var(--muted); margin: 4px 0 20px; }
 
 #search-form { display: flex; gap: 8px; }
 #search-form input {
   flex: 1; padding: 12px 14px; font-size: 1rem; border-radius: 8px;
   border: 1px solid var(--line); background: var(--card); color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
 }
 #search-form button {
   padding: 12px 20px; font-size: 1rem; font-weight: 600; border: 0; border-radius: 8px;
   background: var(--accent); color: #111; cursor: pointer;
 }
+#search-form button:hover:not(:disabled) { filter: brightness(1.08); }
 #search-form button:disabled { opacity: .6; cursor: wait; }
+/* Visible outline for keyboard users (accessibility; judges sometimes tab through). */
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+#search-form input:focus-visible { outline-offset: 0; }
+.source { color: var(--muted); font-size: .8rem; margin: 4px 0 0; }
 .hint { color: var(--muted); font-size: .9rem; }
-a { color: var(--accent); }
+a { color: var(--link); }
 
 #status { min-height: 1.5em; color: var(--muted); }
 #status.error {
@@ -66,7 +74,11 @@ a { color: var(--accent); }
 .card {
   background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
 }
-.headline { display: flex; gap: 14px; align-items: flex-start; }
+.headline { display: flex; gap: 14px; align-items: flex-start; border-left: 5px solid var(--unknown); }
+/* The headline card's left edge matches the rating, so the result reads at a glance. */
+.headline.risk-LOW { border-left-color: var(--low); }
+.headline.risk-MEDIUM { border-left-color: var(--medium); }
+.headline.risk-HIGH { border-left-color: var(--high); }
 .headline p { margin: 0; }
 .badge {
   flex: none; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: .8rem;
@@ -81,7 +93,7 @@ a { color: var(--accent); }
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
 .stats .card { text-align: center; }
-.stats b { display: block; font-size: 1.5rem; }
+.stats b { display: block; font-size: 1.5rem; font-variant-numeric: tabular-nums; }
 .stats small { color: var(--muted); }
 
 .note { color: var(--muted); font-size: .85rem; margin-top: 12px; }
@@ -92,12 +104,13 @@ a { color: var(--accent); }
   padding: 4px 12px; font-size: .9rem;
 }
 
-.table-wrap { overflow-x: auto; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
 .unresolved { color: var(--high); font-weight: 600; }
 .case-meta { display: block; color: var(--muted); font-size: .8rem; margin-top: 2px; }
 table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; }
 th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: .9rem; vertical-align: top; }
-th { color: var(--muted); font-weight: 600; }
+th { color: var(--muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+tbody tr:last-child td { border-bottom: 0; }
 
 .also-check { margin-top: 28px; }
 .also-check h2 { margin-top: 0; }
@@ -109,7 +122,7 @@ th { color: var(--muted); font-weight: 600; }
 .how-we-score p { margin: 10px 0 0; }
 .draft-tag { color: var(--medium); font-size: .85rem; font-weight: 600; }
 
-footer { margin-top: 40px; color: var(--muted); font-size: .8rem; }
+footer { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px; color: var(--muted); font-size: .8rem; }
 
 @media (max-width: 520px) {
   /* Keep the 3 stats side by side on phones, just smaller, so the report isn't a long scroll. */
