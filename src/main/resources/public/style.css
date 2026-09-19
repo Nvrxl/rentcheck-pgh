@@ -92,6 +92,11 @@ table { width: 100%; border-collapse: collapse; background: var(--card); border-
 th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: .9rem; vertical-align: top; }
 th { color: var(--muted); font-weight: 600; }
 
+.also-check { margin-top: 28px; }
+.also-check h2 { margin-top: 0; }
+.also-check ul { margin: 0; padding-left: 20px; }
+.also-check li { margin: 4px 0; }
+
 footer { margin-top: 40px; color: var(--muted); font-size: .8rem; }
 
 @media (max-width: 520px) {

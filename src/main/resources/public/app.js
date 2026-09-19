@@ -8,6 +8,10 @@ const button = form.querySelector("button");
 const statusEl = document.getElementById("status");
 const reportEl = document.getElementById("report");
 
+// The address the user actually typed. The "Also check" links are built from it.
+// Stays null for the sample report, because that address is fake.
+let searchedAddress = null;
+
 // What renters see instead of the raw riskLevel codes.
 // "UNKNOWN" means no records were found, which is NOT the same as safe.
 const RISK_LABELS = {
@@ -23,12 +27,14 @@ form.addEventListener("submit", (e) => {
   if (!address) return;
   // Put the address in the page URL so a report can be refreshed or shared (handy for the demo).
   history.replaceState(null, "", `?address=${encodeURIComponent(address)}`);
+  searchedAddress = address;
   load(`/api/report?address=${encodeURIComponent(address)}`);
 });
 
 document.getElementById("sample-link").addEventListener("click", (e) => {
   e.preventDefault();
   history.replaceState(null, "", "?");
+  searchedAddress = null;
   load("/api/report/sample");
 });
 
@@ -36,6 +42,7 @@ document.getElementById("sample-link").addEventListener("click", (e) => {
 const startAddress = new URLSearchParams(location.search).get("address");
 if (startAddress) {
   input.value = startAddress;
+  searchedAddress = startAddress;
   load(`/api/report?address=${encodeURIComponent(startAddress)}`);
 }
 
@@ -118,7 +125,22 @@ function render(r) {
   document.getElementById("violations-table").hidden = violations.length === 0;
   document.getElementById("violations-empty").hidden = violations.length > 0;
 
+  renderAlsoCheck(searchedAddress);
   reportEl.hidden = false;
+}
+
+// "Also check" links to other sites. encodeURIComponent makes the address safe to put in a URL
+// (spaces, "#", "&" and so on can't break the link or add extra parameters).
+function renderAlsoCheck(address) {
+  document.getElementById("also-check").hidden = !address;
+  if (!address) return;
+  const a = encodeURIComponent(address);
+  document.getElementById("link-maps").href =
+    `https://www.google.com/maps/search/?api=1&query=${a}+Pittsburgh`;
+  document.getElementById("link-google").href =
+    `https://www.google.com/search?q=${encodeURIComponent(`"${address}"`)}+Pittsburgh+reviews`;
+  document.getElementById("link-reddit").href =
+    `https://www.reddit.com/search/?q=${a}`;
 }
 
 // ---------------------------------------------------------------------------
