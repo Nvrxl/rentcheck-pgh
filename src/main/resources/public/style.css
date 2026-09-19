@@ -41,7 +41,20 @@ h2 { font-size: 1.1rem; margin: 28px 0 8px; }
 a { color: var(--accent); }
 
 #status { min-height: 1.5em; color: var(--muted); }
-#status.error { color: var(--high); }
+#status.error { color: var(--high); font-weight: 600; }
+#status.loading::before {
+  content: ""; display: inline-block; width: .9em; height: .9em; margin-right: 8px;
+  vertical-align: -2px; border: 2px solid var(--line); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.sample-banner {
+  background: var(--accent); color: #111; font-weight: 700; text-align: center;
+  padding: 8px 12px; border-radius: 8px; margin: 0 0 12px;
+}
+.searched { color: var(--muted); margin: 0 0 8px; }
+.empty { color: var(--muted); font-style: italic; margin: 0; }
 
 .card {
   background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
@@ -55,6 +68,9 @@ a { color: var(--accent); }
 .badge.LOW { background: var(--low); }
 .badge.MEDIUM { background: var(--medium); }
 .badge.HIGH { background: var(--high); }
+/* "No records found" must not look like a good result: neutral grey with a dashed outline. */
+.badge.UNKNOWN { background: transparent; color: var(--muted); border: 1px dashed var(--muted); }
+[hidden] { display: none !important; }
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
 .stats .card { text-align: center; }
@@ -76,4 +92,14 @@ th { color: var(--muted); font-weight: 600; }
 
 footer { margin-top: 40px; color: var(--muted); font-size: .8rem; }
 
-@media (max-width: 520px) { .stats { grid-template-columns: 1fr; } }
+@media (max-width: 520px) {
+  .stats { grid-template-columns: 1fr; }
+  .headline { flex-direction: column; }
+  #search-form { flex-direction: column; }
+  /* Phones: turn each table row into a small card instead of scrolling sideways. */
+  table, tbody, tr, td { display: block; width: 100%; }
+  thead { display: none; }
+  tr { border-bottom: 1px solid var(--line); padding: 8px 0; }
+  td { border: 0; padding: 2px 12px; }
+  td::before { content: attr(data-label) ": "; color: var(--muted); font-weight: 600; }
+}

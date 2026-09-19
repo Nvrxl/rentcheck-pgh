@@ -19,9 +19,13 @@
     </form>
     <p class="hint">No address handy? <a href="#" id="sample-link">See a sample report</a></p>
 
-    <p id="status" role="status"></p>
+    <p id="status" role="status" aria-live="polite"></p>
 
     <section id="report" hidden>
+      <p id="sample-banner" class="sample-banner" hidden>SAMPLE DATA: made-up records for demo purposes, not a real address.</p>
+
+      <p class="searched">Results for <b id="searched-for"></b></p>
+
       <div class="card headline">
         <span id="risk-badge" class="badge">-</span>
         <p id="summary"></p>
@@ -37,9 +41,11 @@
 
       <h2>Top categories</h2>
       <ul id="categories"></ul>
+      <p id="categories-empty" class="empty" hidden>No categories to show.</p>
 
       <h2>All records</h2>
-      <div class="table-wrap">
+      <p id="violations-empty" class="empty" hidden>No violation records matched this address.</p>
+      <div class="table-wrap" id="violations-table">
         <table>
           <thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Status</th></tr></thead>
           <tbody id="violations"></tbody>
