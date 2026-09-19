@@ -21,7 +21,8 @@ public final class Models {
             List<CategoryCount> categories,
             List<ViolationItem> violations,
             String note,              // extra warning shown in the UI (e.g. "SAMPLE DATA")
-            List<String> questions    // "questions to ask before you sign", chosen from templates
+            List<String> questions,   // "questions to ask before you sign", chosen from templates
+            PropertyService.PropertyFacts property  // what the COUNTY knows about the building, or null
     ) {}
 
     public record CategoryCount(String name, int count) {}

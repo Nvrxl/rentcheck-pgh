@@ -31,9 +31,11 @@ public class ReportService {
     private static final int MAX_RECORDS = 200;
 
     private final WprdcClient wprdc;
+    private final PropertyService properties;
 
     public ReportService(WprdcClient wprdc) {
         this.wprdc = wprdc;
+        this.properties = new PropertyService(wprdc);
     }
 
     public Report buildReport(String address) throws Exception {
@@ -87,9 +89,17 @@ public class ReportService {
             note += " Showing only the newest " + MAX_RECORDS + " records.";
         }
 
+        // County building facts are a BONUS: if that lookup fails or is slow, the report still works.
+        PropertyService.PropertyFacts property = null;
+        try {
+            property = properties.lookupByAddress(address);
+        } catch (Exception e) {
+            System.out.println("[property] lookup failed for " + address + ": " + e.getMessage());
+        }
+
         return new Report(address, items.size(), open, mostRecent, risk,
                 summarize(items.size(), open, safety, safetyOpen, mostRecent),
-                categorize(items), items, note, Questions.forRecords(items));
+                categorize(items), items, note, Questions.forRecords(items), property);
     }
 
     /**
@@ -283,6 +293,9 @@ public class ReportService {
                 summarize(3, 1, 2, 1, "2025-06-02"),
                 categorize(items), items,
                 "SAMPLE DATA - not a real address. Used only for building the interface.",
-                Questions.forRecords(items));
+                Questions.forRecords(items),
+                new PropertyService.PropertyFacts("SAMPLE-PARCEL", "Residential", "RESIDENTIAL", true,
+                        "SINGLE FAMILY", 1921, 2.0, 3, 1, 1450, "an individual", null, "AVERAGE", 1,
+                        "address", null, "SAMPLE DATA - not a real property."));
     }
 }

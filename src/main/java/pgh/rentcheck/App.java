@@ -33,6 +33,7 @@ public class App {
 
         WprdcClient wprdc = new WprdcClient();
         ReportService reports = new ReportService(wprdc);
+        PropertyService properties = new PropertyService(wprdc);
         NeighborhoodService hoods = new NeighborhoodService(wprdc);
         hoods.refreshIfNeeded();   // start the big city download in the background right away
 
@@ -40,7 +41,14 @@ public class App {
                 config.staticFiles.add("/public", Location.CLASSPATH)
         ).start(port);
 
-        app.get("/api/health", ctx -> ctx.json(Map.of("status", "ok")));
+        // /api/health also says WHEN this server started and what it can do, so we can tell at a glance
+        // whether the browser is talking to an old copy that is still running from an earlier build.
+        String startedAt = java.time.ZonedDateTime.now().toString();
+        app.get("/api/health", ctx -> ctx.json(Map.of(
+                "status", "ok",
+                "startedAt", startedAt,
+                "features", List.of("report", "questions", "neighborhoods", "neighborhoods/near",
+                        "debug/peek", "debug/hotspots", "debug/population"))));
 
         app.get("/api/report/sample", ctx -> ctx.json(ReportService.sample()));
 
@@ -149,6 +157,31 @@ public class App {
             out.put("pickedPopulationColumn", parsed.populationColumn());
             out.put("parsedCount", parsed.byName().size());
             out.put("parsed", parsed.byName());
+            ctx.json(out);
+        });
+
+        // e.g. /api/debug/property?address=1231 Lakewood St -> what the COUNTY knows about the building
+        app.get("/api/debug/property", ctx -> {
+            String address = ctx.queryParam("address");
+            if (address == null || address.isBlank()) {
+                ctx.status(400).json(Map.of("error", "Please provide ?address=..."));
+                return;
+            }
+            String normalized = AddressNormalizer.normalize(address);
+            String[] parts = PropertyService.splitHouseAndStreet(normalized);
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("normalized", normalized);
+            out.put("houseNumber", parts == null ? null : parts[0]);
+            out.put("streetName", parts == null ? null : parts[1]);
+            if (parts == null) {
+                out.put("error", "Could not read a house number and street from that address.");
+                ctx.json(out);
+                return;
+            }
+            JsonNode result = wprdc.parcelsByAddress(parts[0], parts[1]).path("result");
+            out.put("matchCount", result.path("records").size());
+            out.put("facts", PropertyService.summarize(result.path("records"), "address"));
+            out.put("rawFirstRow", result.path("records").size() > 0 ? result.path("records").get(0) : null);
             ctx.json(out);
         });
 

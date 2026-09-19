@@ -174,6 +174,25 @@ public class WprdcClient {
     }
 
     /**
+     * Allegheny County property assessment records ("Property Assessments Parcel Data (for downloads)",
+     * resource id verified Sat Sep 19 2026 via /api/debug/peek?package=property-assessments).
+     * The county stores the house number and the street name in SEPARATE columns, so we search both.
+     * There are no owner names in this dataset: the county excludes them by ordinance.
+     */
+    private static final String PARCEL_RESOURCE_ID = "9a1c60bd-f9f7-4aba-aeb7-af8c3aaa44e5";
+    private static final int PARCEL_LIMIT = 60;
+
+    public JsonNode parcelsByAddress(String houseNumber, String streetName) throws IOException, InterruptedException {
+        String filters = "{\"PROPERTYHOUSENUM\":" + Long.parseLong(houseNumber) + ","
+                + "\"PROPERTYADDRESS\":\"" + streetName.replace("\\", "\\\\").replace("\"", "\\\"") + "\","
+                + "\"PROPERTYCITY\":\"PITTSBURGH\"}";
+        String url = BASE + "datastore_search?resource_id=" + PARCEL_RESOURCE_ID
+                + "&limit=" + PARCEL_LIMIT
+                + "&filters=" + URLEncoder.encode(filters, StandardCharsets.UTF_8);
+        return get(url);
+    }
+
+    /**
      * DEVELOPER HELPER: peek at another WPRDC dataset (e.g. "property-assessments") before we write code
      * against it. Lists its resources and shows the column names plus two example rows of the first
      * queryable one, so we check real column names instead of guessing.

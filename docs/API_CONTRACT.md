@@ -27,6 +27,21 @@ Response 200:
     }
   ],
   "note": "Shown under the report as a small warning.",
+  "property": {
+    "parcelId": "0028B00142000000",
+    "type": "University or college property",
+    "countyClass": "GOVERNMENT",
+    "residential": false,
+    "use": "OWNED BY COLLEGE/UNIV/ACADEMY",
+    "yearBuilt": null, "stories": null, "bedrooms": null, "fullBaths": null, "livingAreaSqFt": null,
+    "ownerType": "a company",
+    "ownerOccupied": null,
+    "conditionRating": null,
+    "parcelsAtAddress": 1,
+    "matchedBy": "address",
+    "context": "The county lists this as university or college property for tax purposes, not as housing...",
+    "note": "From Allegheny County assessment records..."
+  },
   "questions": [
     "The city lists 1 building or fire safety case here that looks unresolved. Ask what has been done about it, when it will be fixed, and get the answer in writing.",
     "How do I report a repair, and how quickly are repairs usually done? Can I see the most recent inspection report?"
@@ -35,6 +50,14 @@ Response 200:
 ```
 
 - `questions` (NEW) is a list of 3 to 6 plain-English "questions to ask before you sign", written from templates and chosen by what the city records mention (open cases first; a closing "how are repairs handled" question always last). Show it as a checklist card, e.g. "Questions to ask before you sign". It can be an empty list on old servers, so handle `undefined`. Add a line under it like "A starting point, not an accusation: the questions don't say anyone did anything wrong."
+- `property` (NEW) is what **Allegheny County** records about the building, or `null` when nothing matched (a different dataset from the city violations, so it often misses; the page must handle `null`). Show it as an "About this building" card.
+  - `type` is a plain-English label made for the page; `countyClass` is the county's own word. Show `type`, not `countyClass`: the county files a university building under "GOVERNMENT", which would read as nonsense to a renter.
+  - **If `context` is not null, show it.** It means the address is not ordinary housing (commercial, university, etc.), which explains why violation counts there can look alarming. This is the fix for addresses like 3619 Forbes Ave (a Pitt-owned building with a restaurant in it).
+  - `yearBuilt`, `stories`, `bedrooms`, `fullBaths`, `livingAreaSqFt` and `conditionRating` are filled in **only for residential parcels**, so expect nulls elsewhere.
+  - `parcelsAtAddress` > 1 means the building is assessed unit by unit (condos/apartments); room counts are omitted then, because they would describe one unit.
+  - `ownerType` is "an individual" or "a company". **There are no owner names** anywhere: the county excludes them by ordinance. Never imply we know who the landlord is.
+  - `ownerOccupied` is `true` or `null`, never `false`. `true` means someone claimed the homestead tax reduction, which only applies to a home the owner lives in. `null` means unknown, NOT "it is a rental".
+  - Always show `note` in small text under the card.
 - `riskLevel` is one of `LOW`, `MEDIUM`, `HIGH`, `UNKNOWN`. `UNKNOWN` means no records found (NOT "safe").
 - Any field except `query` and the counts may be `null` or empty. The page must handle that.
 - `violations` is newest first. **Each entry is one city CASE**, not one row: the city stores several rows per case (inspection, re-inspection, detail), and the backend merges them. `totalViolations` counts cases.
