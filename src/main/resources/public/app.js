@@ -147,6 +147,7 @@ function render(r) {
   document.getElementById("violations-empty").hidden = violations.length > 0;
 
   renderAlsoCheck(searchedAddress);
+  renderPlace(searchedAddress);
   reportEl.hidden = false;
 }
 
@@ -214,4 +215,16 @@ function timelineCell(v) {
     td.appendChild(small);
   }
   return td;
+}
+
+// "The building" box: a Google Maps satellite view of the typed address, shown in an iframe
+// (a window onto another website). Hidden for the sample report, whose address is fake.
+function renderPlace(address) {
+  document.getElementById("place").hidden = !address;
+  if (!address) return;
+  document.getElementById("place-address").textContent = `${address}, Pittsburgh, PA`;
+  const src = "https://www.google.com/maps?q=" + encodeURIComponent(`${address}, Pittsburgh, PA`)
+    + "&t=k&z=19&output=embed";   // t=k: satellite, z=19: zoomed in on the building
+  const frame = document.getElementById("place-map");
+  if (frame.src !== src) frame.src = src;   // don't reload the map if it's the same address
 }

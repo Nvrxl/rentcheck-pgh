@@ -44,6 +44,17 @@
         <div class="card"><b id="stat-recent">-</b><small>most recent</small></div>
       </div>
 
+      <!-- "The building": satellite view from Google Maps' free embed (no API key needed).
+           We don't copy photos from rental listings: they belong to those sites. -->
+      <div id="place" class="card place" hidden>
+        <h2>The building</h2>
+        <p class="place-address" id="place-address"></p>
+        <iframe id="place-map" title="Satellite view of the searched address" loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+        <p class="note">Satellite view from Google Maps. Google places the pin, and it can be slightly
+          off. Use "See it on Google Maps" below for Street View.</p>
+      </div>
+
       <p id="note" class="note"></p>
 
       <!-- Shown instead of the lists when nothing matched. Must never read as "this building is safe". -->
