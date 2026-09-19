@@ -68,6 +68,11 @@ h2 { font-size: 1.1rem; margin: 28px 0 8px; }
 .examples a { font-weight: 600; }
 .hint { color: var(--muted); font-size: .9rem; }
 a { color: var(--link); }
+/* "See a sample report" is a button (it does something, it doesn't go anywhere) styled as a link. */
+.link-button {
+  background: none; border: 0; padding: 0; font: inherit; color: var(--link);
+  text-decoration: underline; cursor: pointer;
+}
 
 #status { min-height: 1.5em; color: var(--muted); }
 #status:focus, #results-heading:focus { outline: none; }  /* focused by code, not by the user */

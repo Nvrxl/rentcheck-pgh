@@ -59,7 +59,14 @@ if (startAddress) {
   load(`/api/report?address=${encodeURIComponent(startAddress)}`);
 }
 
+// Each search gets a number. If you click a second search before the first answers,
+// only the newest one is allowed to update the page (otherwise a slow old answer could
+// show the report for the wrong address).
+let latestRequest = 0;
+const TIMEOUT_MS = 25000;   // give up after 25 s instead of spinning forever (demo safety)
+
 async function load(url) {
+  const requestId = ++latestRequest;
   setStatus("Searching city records... (this can take a few seconds)", "loading");
   reportEl.hidden = true;
   button.disabled = true;
@@ -67,12 +74,16 @@ async function load(url) {
   try {
     let res;
     try {
-      res = await fetch(url);
-    } catch {
+      res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    } catch (e) {
+      if (e.name === "TimeoutError") {
+        throw new Error("The search took too long. The city's data service may be slow right now.");
+      }
       throw new Error("Can't reach the RentCheck server. Is it running?");
     }
     // A crash can return an HTML error page instead of JSON, so don't assume JSON.
     const data = await res.json().catch(() => null);
+    if (requestId !== latestRequest) return;   // a newer search started; ignore this old answer
     if (!res.ok || !data) {
       const detail = data && data.error;
       if (res.status === 502) {
@@ -87,9 +98,11 @@ async function load(url) {
       + `${data.totalViolations ?? 0} violations.`, "done");
     document.getElementById("results-heading").focus();
   } catch (err) {
+    if (requestId !== latestRequest) return;
     setStatus(`Something went wrong: ${err.message} You can search again, or try the sample report.`, "error");
     statusEl.focus();   // so keyboard and screen-reader users land on the error message
   } finally {
+    if (requestId !== latestRequest) return;
     button.disabled = false;
     button.textContent = "Check";
   }
