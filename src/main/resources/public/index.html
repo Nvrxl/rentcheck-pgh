@@ -18,6 +18,12 @@
       <button type="submit">Check</button>
     </form>
     <p class="source">Searches official City of Pittsburgh code-violation records (WPRDC open data).</p>
+    <!-- Example addresses with real records, so judges (and our demo) get a useful result in one click. -->
+    <p class="examples">Try:
+      <a href="?address=1231%20Lakewood%20St" data-address="1231 Lakewood St">1231 Lakewood St</a>
+      <span aria-hidden="true">·</span>
+      <a href="?address=5160%20Carnegie%20St" data-address="5160 Carnegie St">5160 Carnegie St</a>
+    </p>
     <p class="hint">No address handy? <a href="#" id="sample-link">See a sample report</a></p>
 
     <p id="status" role="status" aria-live="polite"></p>

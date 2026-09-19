@@ -45,6 +45,8 @@ h2 { font-size: 1.1rem; margin: 28px 0 8px; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 #search-form input:focus-visible { outline-offset: 0; }
 .source { color: var(--muted); font-size: .8rem; margin: 4px 0 0; }
+.examples { color: var(--muted); font-size: .9rem; margin: 10px 0 0; }
+.examples a { font-weight: 600; }
 .hint { color: var(--muted); font-size: .9rem; }
 a { color: var(--link); }
 

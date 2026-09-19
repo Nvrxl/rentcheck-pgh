@@ -23,13 +23,26 @@ const RISK_LABELS = {
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
-  const address = input.value.trim();
+  search(input.value.trim());
+});
+
+// "Try: ..." example links: fill in the box and search, without reloading the page.
+// (Each link also has a normal href, so it still works if JavaScript is slow to load.)
+document.querySelectorAll("[data-address]").forEach((link) => {
+  link.addEventListener("click", (e) => {
+    e.preventDefault();
+    input.value = link.dataset.address;
+    search(link.dataset.address);
+  });
+});
+
+function search(address) {
   if (!address) return;
   // Put the address in the page URL so a report can be refreshed or shared (handy for the demo).
   history.replaceState(null, "", `?address=${encodeURIComponent(address)}`);
   searchedAddress = address;
   load(`/api/report?address=${encodeURIComponent(address)}`);
-});
+}
 
 document.getElementById("sample-link").addEventListener("click", (e) => {
   e.preventDefault();
