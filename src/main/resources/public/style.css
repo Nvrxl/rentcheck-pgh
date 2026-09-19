@@ -1,24 +1,31 @@
 :root {
+  /* Dark is the default for everyone. The Light/Dark button in the header (theme.js) sets
+     data-theme="light" or "dark" on <html>, and the choice is remembered in the browser. */
+  color-scheme: dark;
+  --bg: #14171b;
+  --card: #1e2329;
+  --text: #eceff3;
+  --muted: #9aa4af;
+  --line: #2c333b;
+  --accent: #e0b23a;            /* Pittsburgh gold: buttons and highlights */
+  --link: #e8c35a;              /* text links */
+  /* Badge colors are dark enough for white text to pass WCAG AA contrast (4.5:1). */
+  --low: #1a7a42;
+  --medium: #a35c00;
+  --high: #c62828;
+  --danger-text: #ff8a80;       /* dark red text is unreadable on a dark background */
+  --unknown: #6b7480;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
   --bg: #f6f7f9;
   --card: #ffffff;
   --text: #1b1f24;
   --muted: #5b6570;
   --line: #e2e6eb;
-  --accent: #b8860b;            /* Pittsburgh gold: buttons and highlights */
+  --accent: #b8860b;
   --link: #8a6300;              /* darker gold for text links, so they're readable on white */
-  /* Badge colors are dark enough for white text to pass WCAG AA contrast (4.5:1). */
-  --low: #1a7a42;
-  --medium: #a35c00;
-  --high: #c62828;
   --danger-text: #c62828;       /* red used for text ("Still unresolved", errors) */
-  --unknown: #6b7480;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14171b; --card: #1e2329; --text: #eceff3; --muted: #9aa4af; --line: #2c333b;
-    --accent: #e0b23a; --link: #e8c35a;
-    --danger-text: #ff8a80;     /* dark red text is unreadable on a dark background */
-  }
 }
 * { box-sizing: border-box; }
 
@@ -34,15 +41,22 @@
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background: url("bridge.svg") no-repeat center bottom 8vh / min(1400px, 140vw) auto;
-  opacity: .22;
+  opacity: .3;
 }
-@media (prefers-color-scheme: dark) { body::before { opacity: .3; } }
+:root[data-theme="light"] body::before { opacity: .22; }
 body {
   margin: 0; background: var(--bg); color: var(--text);
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
-header { border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+header { position: relative; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+/* Light/Dark switch, top right of the header. */
+.theme-toggle {
+  position: absolute; top: 4px; right: 0; padding: 6px 12px; font: inherit; font-size: .8rem;
+  color: var(--muted); background: var(--card); border: 1px solid var(--line);
+  border-radius: 999px; cursor: pointer;
+}
+.theme-toggle:hover { color: var(--text); }
 h1 { margin: 0; font-size: 2rem; letter-spacing: -.02em; }
 h1 span { color: var(--accent); }
 h2 { font-size: 1.1rem; margin: 28px 0 8px; }

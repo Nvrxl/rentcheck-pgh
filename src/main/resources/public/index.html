@@ -8,10 +8,13 @@
   <!-- Tab icon: a small gold house, drawn inline so there's no extra file. -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 15 16 4l12 11v13H4z' fill='%23b8860b'/%3E%3Crect x='13' y='19' width='6' height='9' fill='%23fff'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
+  <!-- Loaded early (it is tiny) so the saved Light/Dark choice is applied before the page paints. -->
+  <script src="theme.js"></script>
 </head>
 <body>
   <main>
     <header>
+      <button type="button" id="theme-toggle" class="theme-toggle"></button>
       <h1>RentCheck <span>PGH</span></h1>
       <p class="tagline">Look up a Pittsburgh address before you sign a lease.</p>
     </header>
@@ -104,21 +107,29 @@
       </div>
     </section>
 
-    <!-- PLACEHOLDER wording: Michael will send the final text (docs/HOW_WE_SCORE.md). -->
+    <!-- Wording comes from docs/HOW_WE_SCORE.md. If the rules in ReportService.java change, change both. -->
     <!-- <details> is a built-in HTML dropdown: click the title to open or close it, no JavaScript. -->
     <details id="how-we-score" class="card how-we-score">
       <summary>How we score this</summary>
-      <p class="draft-tag">Draft: final wording coming soon.</p>
-      <p>The rating is driven mainly by <b>building and fire safety</b> violations
-        (things like structural problems, fire hazards, electrical and heating issues),
-        especially ones that are still unresolved.</p>
-      <p>Most city records are about trash, weeds and debris outside the property. By our count
-        that is about half of all records. They are still listed in the report, but they count
-        much less, because they say little about whether an apartment is safe to live in.</p>
-      <p>Everything is plain rules written in code. No AI or language model is involved, and
-        the same records always give the same rating.</p>
-      <p>A rating is a starting point for your own questions, not a verdict on the landlord.
-        "No records found" is never treated as safe.</p>
+      <p>Only <b>building and fire safety</b> cases (structural problems, fire hazards, electrical and
+        heating issues) change the rating. Trash, weeds and debris make up about half of all city
+        records. We still list them in the report, but they earn no points, because they say little
+        about whether an apartment is safe to live in.</p>
+      <p>Each building or fire safety case earns points:</p>
+      <ul>
+        <li><b>3 points</b> if it is still unresolved and was issued in the last 3 years.</li>
+        <li><b>1 point</b> if it is still unresolved but older. Cases can sit "In Court" for years,
+          and the data can't tell us whether an old one is still a real problem.</li>
+        <li><b>1 point</b> for each case fixed in the last 3 years, up to 4 points in total. A
+          history of fixed problems can raise the rating to "Some concern" but never to "High concern".</li>
+      </ul>
+      <p><b>8 or more points</b> is "High concern", <b>3 to 7</b> is "Some concern", and
+        <b>fewer than 3</b> is "Low concern".</p>
+      <p>These are plain rules written in code. No AI or language model is involved, and the same
+        records always give the same rating. The cut-offs are our own judgment, so treat the rating
+        as a starting point for your own questions, not a verdict on the landlord.</p>
+      <p>If we find no records, we say so and never call the place "safe": the address may not have
+        matched, problems may not have been reported, or it may be outside the City of Pittsburgh.</p>
     </details>
 
     <footer>
