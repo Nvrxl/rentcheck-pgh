@@ -104,8 +104,9 @@ function render(r) {
   const body = document.getElementById("violations");
   body.replaceChildren(...violations.map((v) => {
     const tr = document.createElement("tr");
+    tr.appendChild(timelineCell(v));
     // data-label lets the CSS show each cell as "Label: value" on phones.
-    const cells = [["Date", v.date], ["Type", v.code], ["Description", v.description], ["Status", v.status]];
+    const cells = [["Type", v.code], ["Description", v.description], ["Status", v.status]];
     for (const [label, value] of cells) {
       const td = document.createElement("td");
       td.dataset.label = label;
@@ -118,4 +119,56 @@ function render(r) {
   document.getElementById("violations-empty").hidden = violations.length > 0;
 
   reportEl.hidden = false;
+}
+
+// ---------------------------------------------------------------------------
+// Timeline for one violation: "Issued Feb 18, 2026, resolved Mar 19, 2026",
+// plus a small line with the case ID and legal code section when we have them.
+// ---------------------------------------------------------------------------
+
+// Same list as OPEN_STATUSES in Michael's ReportService.java. Keep the two in sync.
+const OPEN_STATUSES = ["in violation", "in court", "clean & lien", "appealed"];
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// "2026-02-18" -> "Feb 18, 2026". We read the numbers ourselves instead of using new Date(),
+// because new Date("2026-02-18") means midnight UTC, which shows as Feb 17 in Pittsburgh.
+function niceDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || "");
+  if (!m) return null;
+  const month = MONTHS[Number(m[2]) - 1];
+  return month ? `${month} ${Number(m[3])}, ${m[1]}` : null;
+}
+
+function timelineText(v) {
+  const issued = niceDate(v.date);
+  const resolved = niceDate(v.resolvedDate);
+  const isOpen = OPEN_STATUSES.includes(String(v.status || "").trim().toLowerCase());
+
+  const start = issued ? `Issued ${issued}` : "Issue date not on record";
+  if (resolved) return { text: `${start}, resolved ${resolved}`, open: false };
+  if (isOpen) return { text: `${start}. Still unresolved`, open: true };
+  // Closed (or unknown status) but the city gave no resolved date: say so rather than guess.
+  return { text: `${start}. No resolved date on record`, open: false };
+}
+
+function timelineCell(v) {
+  const td = document.createElement("td");
+  td.dataset.label = "Timeline";
+
+  const { text, open } = timelineText(v);
+  const main = document.createElement("div");
+  main.textContent = text;
+  if (open) main.className = "unresolved";
+  td.appendChild(main);
+
+  // "Case CF-ES-2026-008155 · CITY CODE 619.06(A)": only the parts that exist.
+  const extra = [v.caseId && `Case ${v.caseId}`, v.codeSection].filter(Boolean).join(" · ");
+  if (extra) {
+    const small = document.createElement("small");
+    small.className = "case-meta";
+    small.textContent = extra;
+    td.appendChild(small);
+  }
+  return td;
 }
