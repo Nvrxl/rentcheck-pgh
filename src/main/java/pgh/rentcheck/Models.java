@@ -22,8 +22,16 @@ public final class Models {
             List<ViolationItem> violations,
             String note,              // extra warning shown in the UI (e.g. "SAMPLE DATA")
             List<String> questions,   // "questions to ask before you sign", chosen from templates
-            PropertyService.PropertyFacts property  // what the COUNTY knows about the building, or null
+            PropertyService.PropertyFacts property,  // what the COUNTY knows about the building, or null
+            ReportNeighborhood neighborhood  // where this address sits on the neighborhood ranking, or null
     ) {}
+
+    /**
+     * Links a report to the Neighborhoods ranking ("In Central Oakland: rank 12").
+     * rank/per1000 are null for neighborhoods we can't rank (see NeighborhoodService).
+     */
+    public record ReportNeighborhood(String name, Integer rank, Double per1000,
+                                     Integer openRecent, String rankedBy) {}
 
     public record CategoryCount(String name, int count) {}
 

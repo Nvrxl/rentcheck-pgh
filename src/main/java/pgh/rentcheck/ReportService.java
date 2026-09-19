@@ -3,6 +3,7 @@ package pgh.rentcheck;
 import com.fasterxml.jackson.databind.JsonNode;
 import pgh.rentcheck.Models.CategoryCount;
 import pgh.rentcheck.Models.Report;
+import pgh.rentcheck.Models.ReportNeighborhood;
 import pgh.rentcheck.Models.ViolationItem;
 
 import java.time.LocalDate;
@@ -32,10 +33,12 @@ public class ReportService {
 
     private final WprdcClient wprdc;
     private final PropertyService properties;
+    private final NeighborhoodService neighborhoods;
 
-    public ReportService(WprdcClient wprdc) {
+    public ReportService(WprdcClient wprdc, NeighborhoodService neighborhoods) {
         this.wprdc = wprdc;
         this.properties = new PropertyService(wprdc);
+        this.neighborhoods = neighborhoods;
     }
 
     public Report buildReport(String address) throws Exception {
@@ -44,11 +47,14 @@ public class ReportService {
 
         // Step 1: keep only rows for this exact address, grouped by case number.
         Map<String, List<JsonNode>> byCase = new LinkedHashMap<>();
+        Map<String, Integer> hoodVotes = new LinkedHashMap<>();   // which neighborhood the city put this address in
         int rowsForAddress = 0;
         for (JsonNode r : records) {
             // The search can return look-alikes (e.g. "1231 LAKEWOOD" vs "12310 LAKEWOOD"): double check.
             if (!AddressNormalizer.matches(text(r, Fields.ADDRESS), address)) continue;
             rowsForAddress++;
+            String hood = text(r, Fields.NEIGHBORHOOD);
+            if (!isBlank(hood)) hoodVotes.merge(hood.trim(), 1, Integer::sum);
             String caseId = text(r, Fields.CASEFILE);
             if (isBlank(caseId)) caseId = "row-" + r.path("_id").asText();
             byCase.computeIfAbsent(caseId, k -> new ArrayList<>()).add(r);
@@ -99,7 +105,8 @@ public class ReportService {
 
         return new Report(address, items.size(), open, mostRecent, risk,
                 summarize(items.size(), open, safety, safetyOpen, mostRecent),
-                categorize(items), items, note, Questions.forRecords(items), property);
+                categorize(items), items, note, Questions.forRecords(items), property,
+                neighborhoodOf(hoodVotes));
     }
 
     /**
@@ -263,6 +270,28 @@ public class ReportService {
         return sb.toString();
     }
 
+    /**
+     * Where this address sits on the neighborhood ranking. The neighborhood NAME comes from the city's
+     * own column on the matched records (the most common value, since a corner address can be tagged
+     * differently on different cases). Returns null if we have no name, or if the ranking is still
+     * loading: the report must never wait for it.
+     */
+    private ReportNeighborhood neighborhoodOf(Map<String, Integer> hoodVotes) {
+        String name = hoodVotes.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey).orElse(null);
+        if (name == null || neighborhoods == null) return null;
+
+        NeighborhoodService.Snapshot snap = neighborhoods.current();
+        if (snap == null) return new ReportNeighborhood(name, null, null, null, null);
+        for (NeighborhoodService.Hood h : snap.hoods()) {
+            if (h.name().equalsIgnoreCase(name)) {
+                return new ReportNeighborhood(name, h.rank(), h.per1000(), h.openRecent(), snap.rankedBy());
+            }
+        }
+        return new ReportNeighborhood(name, null, null, null, snap.rankedBy());
+    }
+
     /** Groups violations into renter-friendly categories (see Categories.java). */
     static List<CategoryCount> categorize(List<ViolationItem> items) {
         Map<String, Integer> counts = new LinkedHashMap<>();
@@ -296,6 +325,7 @@ public class ReportService {
                 Questions.forRecords(items),
                 new PropertyService.PropertyFacts("SAMPLE-PARCEL", "Residential", "RESIDENTIAL", true,
                         "SINGLE FAMILY", 1921, 2.0, 3, 1, 1450, "an individual", null, "AVERAGE", 1,
-                        "address", null, "SAMPLE DATA - not a real property."));
+                        "address", null, "SAMPLE DATA - not a real property."),
+                new ReportNeighborhood("Sample Neighborhood", 12, 2.0, 3, "per1000"));
     }
 }

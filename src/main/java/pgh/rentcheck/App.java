@@ -32,9 +32,9 @@ public class App {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "7070"));
 
         WprdcClient wprdc = new WprdcClient();
-        ReportService reports = new ReportService(wprdc);
-        PropertyService properties = new PropertyService(wprdc);
         NeighborhoodService hoods = new NeighborhoodService(wprdc);
+        ReportService reports = new ReportService(wprdc, hoods);
+        PropertyService properties = new PropertyService(wprdc);
         hoods.refreshIfNeeded();   // start the big city download in the background right away
 
         Javalin app = Javalin.create(config ->
