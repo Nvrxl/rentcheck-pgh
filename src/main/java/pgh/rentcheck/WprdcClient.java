@@ -150,6 +150,29 @@ public class WprdcClient {
         return result;
     }
 
+    /**
+     * One page of every STILL-OPEN case row (all case types; we sort out the building/fire safety ones
+     * ourselves with Categories). Used by NeighborhoodService. Sorted by _id so paging is stable.
+     */
+    public JsonNode openCasesPage(int offset, int limit) throws IOException, InterruptedException {
+        String filters = "{\"status\":[\"In Violation\",\"In Court\",\"Clean & Lien\",\"Appealed\"]}";
+        String fields = String.join(",", Fields.CASEFILE, Fields.CASE_TYPE, Fields.ADDRESS, Fields.NEIGHBORHOOD,
+                Fields.DATE, Fields.LATITUDE, Fields.LONGITUDE);
+        String url = BASE + "datastore_search?resource_id=" + resourceId()
+                + "&limit=" + limit + "&offset=" + offset
+                + "&fields=" + URLEncoder.encode(fields, StandardCharsets.UTF_8)
+                + "&sort=" + URLEncoder.encode("_id", StandardCharsets.UTF_8)
+                + "&filters=" + URLEncoder.encode(filters, StandardCharsets.UTF_8);
+        return get(url);
+    }
+
+    /** City of Pittsburgh neighborhood population, 2010 and 2020 (2020 Census redistricting extract). */
+    private static final String POPULATION_RESOURCE_ID = "a8414ed5-c50f-417e-bb67-82b734660da6";
+
+    public JsonNode population() throws IOException, InterruptedException {
+        return get(BASE + "datastore_search?resource_id=" + POPULATION_RESOURCE_ID + "&limit=500");
+    }
+
     /** Shows the real column names plus one example row. Used by /api/debug/fields. */
     public JsonNode describeFields() throws IOException, InterruptedException {
         return get(BASE + "datastore_search?resource_id=" + resourceId() + "&limit=1");
