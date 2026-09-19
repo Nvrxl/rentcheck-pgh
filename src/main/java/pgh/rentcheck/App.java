@@ -24,8 +24,9 @@ public class App {
     private static final String NEIGHBORHOOD_NOTE =
             "This ranks housing conditions from city inspection records, not crime: the city's open crime data "
             + "stopped updating in November 2023. Counts depend on how many inspections happen, and a "
-            + "neighborhood with more cases is not necessarily unsafe. Where shown, per-1,000 rates use "
-            + "2020 Census population.";
+            + "neighborhood with more cases is not necessarily unsafe. Cases include commercial and "
+            + "mixed-use buildings, so busy business districts can rank high. Where shown, per-1,000 rates "
+            + "use 2020 Census population.";
 
     public static void main(String[] args) {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "7070"));

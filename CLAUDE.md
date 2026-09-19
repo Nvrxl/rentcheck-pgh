@@ -80,6 +80,13 @@ Run: `mvn compile exec:java` -> http://localhost:7070
 - Roughly half of all city records are weeds/trash/junk; only about a quarter are building & fire
   safety. So the risk rating is driven by building & fire safety problems only (`Categories.java`).
 - Statuses that mean unresolved: In Violation, In Court, Clean & Lien, Appealed.
+- Neighborhood ranking (`NeighborhoodService.java`) ranks unresolved building/fire safety cases from the last
+  3 years per 1,000 residents (2020 Census table from WPRDC). It is about housing conditions, NOT crime: the city's
+  open police-blotter data stopped updating in Nov 2023 and its replacement is a dashboard with no data download,
+  so never build or promise a "live crime ranking". Case counts include commercial and mixed-use buildings.
+- The county's open property-assessment data excludes owner names (county ordinance), so "owner matching" is not possible.
+- The city's 311 open data stopped updating in Feb 2025. Don't use it.
+- We don't scrape or list rentals. "Rentals near you" only shows search links to other sites (`rentalLinks`).
 - The data only covers the City of Pittsburgh. "No records" can mean a clean address, a typo, or an
   address outside the city: never present it as "safe".
 

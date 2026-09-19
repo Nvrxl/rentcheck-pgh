@@ -102,8 +102,9 @@ public class NeighborhoodService {
 
     // ---------------------------------------------------------------- results
 
+    /** rateNote explains why per1000/rank is null (small population, unclear population), else null. */
     public record Hood(String name, int openRecent, int openOlder, int addresses,
-                       Integer population, Double per1000, Integer rank) {}
+                       Integer population, Double per1000, Integer rank, String rateNote) {}
 
     public record Nearby(String name, double distanceKm, Integer rank, int openRecent, Double per1000) {}
 
@@ -170,7 +171,13 @@ public class NeighborhoodService {
             Map<String, Integer> pop = new HashMap<>();
             populationByName.forEach((k, v) -> pop.put(normalizeName(k), v));
 
-            record Tmp(String name, int recent, int older, int addresses, Integer population, Double per1000) {}
+            // The city's table sometimes repeats one population figure for two neighborhoods (a copy
+            // error is likely). We can't tell which is right, so we don't compute a rate for either.
+            Map<Integer, Integer> figureCount = new HashMap<>();
+            pop.values().forEach(v -> figureCount.merge(v, 1, Integer::sum));
+
+            record Tmp(String name, int recent, int older, int addresses, Integer population, Double per1000,
+                       boolean populationKnown, String rateNote) {}
             List<Tmp> tmp = new ArrayList<>();
             List<List<double[]>> pointsPerHood = new ArrayList<>();
             for (Map.Entry<String, Map<String, CaseAcc>> e : byHood.entrySet()) {
@@ -183,16 +190,26 @@ public class NeighborhoodService {
                     if (c.address != null) addresses.add(c.address);
                     if (!Double.isNaN(c.lat)) pts.add(new double[]{c.lat, c.lon});
                 }
-                Integer population = pop.get(normalizeName(e.getKey()));
-                Double per1000 = (population != null && population >= MIN_POPULATION_FOR_RATE)
-                        ? Math.round(recent * 10000.0 / population) / 10.0 : null;
-                tmp.add(new Tmp(e.getKey(), recent, older, addresses.size(), population, per1000));
+                Integer population = lookupPopulation(e.getKey(), pop);
+                Double per1000 = null;
+                String rateNote = null;
+                if (population == null) {
+                    rateNote = "population not found";
+                } else if (population < MIN_POPULATION_FOR_RATE) {
+                    rateNote = "small population, so a rate would be misleading";
+                } else if (figureCount.get(population) > 1) {
+                    rateNote = "the city's population table lists the same figure for two neighborhoods, so we don't trust it";
+                } else {
+                    per1000 = Math.round(recent * 10000.0 / population) / 10.0;
+                }
+                tmp.add(new Tmp(e.getKey(), recent, older, addresses.size(), population, per1000, population != null, rateNote));
                 pointsPerHood.add(pts);
             }
 
-            // Rank per 1,000 residents only if we could match most neighborhoods to a population.
-            long withRate = tmp.stream().filter(t -> t.per1000() != null).count();
-            boolean perCapita = !tmp.isEmpty() && withRate >= Math.ceil(tmp.size() * 0.8);
+            // Rank per 1,000 residents if we found a population for at least 90% of neighborhoods;
+            // otherwise fall back to raw counts.
+            long known = tmp.stream().filter(Tmp::populationKnown).count();
+            boolean perCapita = !tmp.isEmpty() && known >= Math.ceil(tmp.size() * 0.9);
             Comparator<Tmp> order = perCapita
                     ? Comparator.comparing((Tmp t) -> t.per1000() == null ? -1.0 : t.per1000()).reversed()
                             .thenComparing(Comparator.comparingInt(Tmp::recent).reversed())
@@ -208,7 +225,8 @@ public class NeighborhoodService {
                 Tmp t = tmp.get(idx.get(pos));
                 Integer r = null;
                 if (!perCapita || t.per1000() != null) r = ++rank;
-                hoods.add(new Hood(t.name(), t.recent(), t.older(), t.addresses(), t.population(), t.per1000(), r));
+                hoods.add(new Hood(t.name(), t.recent(), t.older(), t.addresses(), t.population(), t.per1000(), r,
+                        perCapita ? t.rateNote() : null));
                 newIndexOf[idx.get(pos)] = pos;
             }
 
@@ -287,8 +305,32 @@ public class NeighborhoodService {
 
     // ---------------------------------------------------------------- small helpers
 
+    /** Lower-case, no punctuation, no "(Downtown)"-style extras, so the two city tables' spellings line up. */
     static String normalizeName(String s) {
-        return s == null ? "" : s.toLowerCase().replace("&", "and").replaceAll("[^a-z0-9]+", " ").trim();
+        return s == null ? "" : s.toLowerCase().replaceAll("\\(.*?\\)", " ").replace("&", "and")
+                .replaceAll("[^a-z0-9]+", " ").trim();
+    }
+
+    /**
+     * Finds a neighborhood's population by name. The two city tables spell a few names differently
+     * ("Central Business District" vs "Central Business District (Downtown)", "Arlington" vs
+     * "Arlington - Arlington Heights (Combined)", "Spring Hill-City View" vs "Spring Hill-City"), so if there
+     * is no exact match we accept a name that starts with the other, but only if exactly one does.
+     * `pop` keys must already be normalized.
+     */
+    static Integer lookupPopulation(String hoodName, Map<String, Integer> pop) {
+        String key = normalizeName(hoodName);
+        Integer exact = pop.get(key);
+        if (exact != null) return exact;
+        Integer found = null;
+        for (Map.Entry<String, Integer> e : pop.entrySet()) {
+            String other = e.getKey();
+            if (other.startsWith(key + " ") || key.startsWith(other + " ")) {
+                if (found != null) return null;   // ambiguous: don't guess
+                found = e.getValue();
+            }
+        }
+        return found;
     }
 
     /** Straight-line distance in km (haversine formula). Good enough for "nearest neighborhood". */

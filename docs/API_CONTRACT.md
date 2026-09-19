@@ -56,14 +56,14 @@ Neighborhoods ranked by how many building and fire safety cases are **still unre
   "truncated": false,
   "neighborhoods": [
     { "name": "Central Oakland", "openRecent": 12, "openOlder": 3, "addresses": 9,
-      "population": 6100, "per1000": 2.0, "rank": 1 }
+      "population": 6100, "per1000": 2.0, "rank": 1, "rateNote": null }
   ],
   "note": "Shown small under the ranking."
 }
 ```
 
-- `rankedBy` is `"per1000"` (cases per 1,000 residents, from 2020 Census population) or `"count"` (raw number of cases, used if we couldn't match most neighborhoods to a population). **Show the ranking's unit from this field.**
-- `population`, `per1000` and `rank` can be `null`. In `per1000` mode, neighborhoods with fewer than 1,000 residents have `per1000: null` and `rank: null` (their rate would be noise): list them at the bottom as "not ranked (small population)".
+- `rankedBy` is `"per1000"` (cases per 1,000 residents, from 2020 Census population) or `"count"` (raw number of cases, used only if we couldn't find a population for at least 90% of neighborhoods). **Show the ranking's unit from this field.**
+- `population`, `per1000`, `rank` and `rateNote` can be `null`. In `per1000` mode, a neighborhood with no trustworthy rate has `per1000: null`, `rank: null` and a `rateNote` saying why (for example fewer than 1,000 residents, or the city's population table repeating one figure for two neighborhoods, which happens for Shadyside and Squirrel Hill South). List those at the bottom as "not ranked" and show the `rateNote`.
 - The list is already sorted best-to-worst by rank. Show `note` under the ranking.
 - Returns `503 {"status": "loading" | "error", "message": "..."}` while the city data is loading (about a minute after the server starts) or if the load failed. The page should show the message and retry every few seconds.
 - The data is cached in the server and refreshed every 6 hours.
