@@ -5,6 +5,7 @@ import pgh.rentcheck.Models.CategoryCount;
 import pgh.rentcheck.Models.Report;
 import pgh.rentcheck.Models.ViolationItem;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -72,7 +73,7 @@ public class ReportService {
         }
 
         String mostRecent = items.isEmpty() ? null : items.get(0).date();
-        String risk = riskLevel(items.size(), open, safety, safetyOpen);
+        String risk = riskLevel(items, LocalDate.now());
 
         int cases = byCase.size();
         int notCounted = cases - items.size();
@@ -192,17 +193,43 @@ public class ReportService {
         return status != null && OPEN_STATUSES.contains(status.trim().toLowerCase());
     }
 
+    // Points scoring. Full explanation for humans: docs/HOW_WE_SCORE.md (keep the two in sync!).
+    static final int POINTS_OPEN_RECENT = 3;    // unresolved building/fire safety case from the last 3 years
+    static final int POINTS_OPEN_OLD = 1;       // unresolved but older: city cases can sit "In Court" for years
+    static final int POINTS_RESOLVED_RECENT = 1; // fixed building/fire safety case from the last 3 years
+    static final int MAX_RESOLVED_POINTS = 4;   // history alone can never push a rating past MEDIUM
+    static final int HIGH_AT = 8;
+    static final int MEDIUM_AT = 3;
+    static final int RECENT_YEARS = 3;
+
     /**
-     * FIRST-DRAFT score. The thresholds are guesses; tune them and document them in
-     * docs/HOW_WE_SCORE.md. Key idea: only BUILDING & FIRE SAFETY problems drive the rating,
-     * because about half of all city records are weeds and trash, which say little about
-     * whether an apartment is safe to live in.
+     * The rating. Key idea: only BUILDING & FIRE SAFETY cases earn points, because about half of
+     * all city records are weeds and trash, which say little about whether an apartment is safe.
+     * Unresolved and recent cases weigh more than fixed or old ones.
+     * Pure function of the list and today's date, so the same records always give the same rating.
      */
-    static String riskLevel(int total, int open, int safety, int safetyOpen) {
-        if (total == 0) return "UNKNOWN"; // no records != safe!
-        if (safetyOpen >= 2 || safety >= 10) return "HIGH";
-        if (safetyOpen >= 1 || safety >= 3 || open >= 5) return "MEDIUM";
+    static String riskLevel(List<ViolationItem> items, LocalDate today) {
+        if (items.isEmpty()) return "UNKNOWN"; // no records != safe!
+        int score = score(items, today);
+        if (score >= HIGH_AT) return "HIGH";
+        if (score >= MEDIUM_AT) return "MEDIUM";
         return "LOW";
+    }
+
+    static int score(List<ViolationItem> items, LocalDate today) {
+        String cutoff = today.minusYears(RECENT_YEARS).toString();   // ISO dates compare correctly as text
+        int points = 0;
+        int resolvedPoints = 0;
+        for (ViolationItem v : items) {
+            if (!Categories.SAFETY.equals(Categories.bucket(v.code()))) continue;
+            boolean recent = v.date() == null || v.date().compareTo(cutoff) >= 0;  // unknown date: assume recent
+            if (looksOpen(v.status())) {
+                points += recent ? POINTS_OPEN_RECENT : POINTS_OPEN_OLD;
+            } else if (recent) {
+                resolvedPoints += POINTS_RESOLVED_RECENT;
+            }
+        }
+        return points + Math.min(resolvedPoints, MAX_RESOLVED_POINTS);
     }
 
     /** Template-based plain English. Keep it factual and careful. */
