@@ -167,6 +167,14 @@ th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--li
 th { color: var(--muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
 tbody tr:last-child td { border-bottom: 0; }
 
+.property { margin-top: 16px; }
+.property h2 { margin: 0 0 8px; }
+.property-context { margin: 0 0 12px; background: var(--bg); padding: 10px 12px; border-radius: 8px; }
+/* Facts as a two-column list: label on the left, value on the right. */
+.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+.facts dt { color: var(--muted); font-weight: 600; }
+.facts dd { margin: 0; }
+@media (max-width: 520px) { .facts { grid-template-columns: 1fr; gap: 0; } .facts dd { margin-bottom: 8px; } }
 .questions { margin-top: 16px; }
 .questions h2 { margin: 0; }
 .questions .note { margin: 2px 0 10px; }

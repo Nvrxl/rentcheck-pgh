@@ -69,13 +69,6 @@
         <div class="card"><b id="stat-recent">-</b><small>most recent</small></div>
       </div>
 
-      <!-- Questions from the backend (templates chosen by what the records mention). Hidden if the list is empty. -->
-      <div id="questions" class="card questions" hidden>
-        <h2>Questions to ask before you sign</h2>
-        <p class="note">A starting point, not an accusation.</p>
-        <ul id="questions-list" class="checklist"></ul>
-      </div>
-
       <!-- "The building": satellite view from Google Maps' free embed (no API key needed).
            We don't copy photos from rental listings: they belong to those sites. -->
       <div id="place" class="card place" hidden>
@@ -85,6 +78,16 @@
                 referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
         <p class="note">Satellite view from Google Maps. Google places the pin, and it can be slightly
           off. Use "See it on Google Maps" below for Street View.</p>
+      </div>
+
+      <!-- County assessment facts (see "property" in docs/API_CONTRACT.md). Hidden when property is null.
+           Never shows countyClass, and never owner names: the county doesn't publish them. -->
+      <div id="property" class="card property" hidden>
+        <h2>About this building</h2>
+        <p id="property-context" class="callout property-context" hidden></p>
+        <dl id="property-facts" class="facts"></dl>
+        <p id="property-units" class="note" hidden></p>
+        <p id="property-note" class="note"></p>
       </div>
 
       <p id="note" class="note"></p>
@@ -127,6 +130,13 @@
           <li><a id="link-reddit" target="_blank" rel="noopener noreferrer">Search Reddit<span class="visually-hidden"> (opens in a new tab)</span></a></li>
         </ul>
         <p class="note">Reviews come from other websites and may be unreliable.</p>
+      </div>
+
+      <!-- Questions from the backend (templates chosen by what the records mention). Hidden if the list is empty. -->
+      <div id="questions" class="card questions" hidden>
+        <h2>Questions to ask before you sign</h2>
+        <p class="note">A starting point, not an accusation.</p>
+        <ul id="questions-list" class="checklist"></ul>
       </div>
     </section>
 

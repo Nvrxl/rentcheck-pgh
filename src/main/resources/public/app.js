@@ -168,6 +168,7 @@ function render(r) {
 
   renderAlsoCheck(searchedAddress);
   renderPlace(searchedAddress);
+  renderProperty(r.property);
   renderQuestions(r.questions);
   renderNeighborhood(r.neighborhood);
   reportEl.hidden = false;
@@ -304,4 +305,48 @@ function renderNeighborhood(hood) {
   link.textContent = "See the neighborhood ranking";
   line.appendChild(link);
   line.hidden = false;
+}
+
+// "About this building": Allegheny County assessment facts. Rules from docs/API_CONTRACT.md:
+// show `type` (never `countyClass`), always show `context` when present, handle `property: null`,
+// and never suggest we know who the landlord is (the county excludes owner names by law).
+function renderProperty(p) {
+  const card = document.getElementById("property");
+  if (!p || typeof p !== "object") { card.hidden = true; return; }
+
+  // The context warning: e.g. "this is university property, not housing".
+  const context = document.getElementById("property-context");
+  context.textContent = p.context || "";
+  context.hidden = !p.context;
+
+  const has = (v) => v !== null && v !== undefined && v !== "";
+  const facts = [
+    ["Type", p.type],
+    ["Year built", p.yearBuilt],
+    ["Stories", p.stories],
+    ["Bedrooms", p.bedrooms],
+    ["Full bathrooms", p.fullBaths],
+    ["Living area", typeof p.livingAreaSqFt === "number" ? `${p.livingAreaSqFt.toLocaleString("en-US")} sq ft` : p.livingAreaSqFt],
+    ["Condition", has(p.conditionRating) ? `${p.conditionRating} (county assessor's rating, may be years old)` : null],
+    // Owner TYPE only. We say plainly that we don't know who it is.
+    ["Owner", has(p.ownerType) ? `Owned by ${p.ownerType}. The county doesn't publish owner names, so we don't know who the landlord is.` : null],
+    // true = someone claimed the homestead tax break (owner lives there). null = unknown, NOT "it's a rental",
+    // so we only show this line when it's true.
+    ["Owner lives here?", p.ownerOccupied === true ? "Probably: someone claims the homestead tax reduction, which only applies to a home the owner lives in." : null],
+    ["County parcel ID", p.parcelId],
+  ].filter(([, value]) => has(value));
+
+  document.getElementById("property-facts").replaceChildren(...facts.flatMap(([label, value]) => [
+    Object.assign(document.createElement("dt"), { textContent: label }),
+    Object.assign(document.createElement("dd"), { textContent: String(value) }),
+  ]));
+
+  // Several parcels at one address = assessed unit by unit (condos/apartments), so no room counts.
+  const units = document.getElementById("property-units");
+  units.hidden = !(p.parcelsAtAddress > 1);
+  units.textContent = `The county assesses this address as ${p.parcelsAtAddress} separate units, `
+    + "so room counts aren't shown (they would describe just one unit).";
+
+  document.getElementById("property-note").textContent = p.note || "From Allegheny County assessment records.";
+  card.hidden = false;
 }
