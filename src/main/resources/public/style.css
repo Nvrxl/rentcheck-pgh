@@ -156,6 +156,14 @@ th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--li
 th { color: var(--muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
 tbody tr:last-child td { border-bottom: 0; }
 
+.questions { margin-top: 16px; }
+.questions h2 { margin: 0; }
+.questions .note { margin: 2px 0 10px; }
+.checklist { list-style: none; padding: 0; margin: 0; }
+.checklist li { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+.checklist li + li { border-top: 1px solid var(--line); }
+.checklist input { flex: none; width: 18px; height: 18px; margin-top: 3px; accent-color: var(--accent); }
+.checklist input:checked + label { color: var(--muted); text-decoration: line-through; }
 .place { margin-top: 16px; }
 .place h2 { margin-top: 0; }
 .place-address { font-weight: 600; margin: 0 0 10px; }
@@ -173,6 +181,47 @@ tbody tr:last-child td { border-bottom: 0; }
 .how-we-score p { margin: 10px 0 0; }
 .draft-tag { color: var(--muted); font-size: .85rem; font-weight: 600; }
 
+/* ---------- Navigation between the three pages ---------- */
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin: 0 0 -1px; }
+.tabs a {
+  padding: 8px 14px; color: var(--muted); text-decoration: none; font-weight: 600; font-size: .95rem;
+  border-bottom: 3px solid transparent;
+}
+.tabs a:hover { color: var(--text); }
+.tabs a[aria-current="page"] { color: var(--text); border-bottom-color: var(--accent); }
+
+/* ---------- Neighborhoods and Rentals pages ---------- */
+.page-title { font-size: 1.35rem; margin: 0 0 12px; }
+.callout { border-left: 4px solid var(--accent); margin: 12px 0; }
+.callout p { margin: 0; }
+.filter-label { display: block; font-weight: 600; margin: 16px 0 6px; }
+.filter {
+  width: 100%; max-width: 320px; padding: 10px 12px; font-size: 16px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text); margin-bottom: 12px;
+}
+.rank-table td:first-child { font-weight: 700; font-variant-numeric: tabular-nums; }
+.rank-table td { font-variant-numeric: tabular-nums; }
+.unranked { padding-left: 20px; }
+.unranked li { margin: 8px 0; }
+.rate-note { display: block; color: var(--muted); }
+
+.primary-button {
+  padding: 12px 20px; font-size: 1rem; font-weight: 600; border: 0; border-radius: 8px;
+  background: var(--accent); color: #111; cursor: pointer;
+}
+.primary-button:disabled { opacity: .6; cursor: wait; }
+.nearby { display: grid; gap: 12px; }
+.nearby-card h3 { margin: 0 0 4px; font-size: 1.15rem; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.nearby-card p { margin: 4px 0; }
+.nearby-card h4 { margin: 12px 0 4px; font-size: .95rem; }
+.here-tag {
+  font-size: .75rem; font-weight: 700; padding: 2px 10px; border-radius: 999px;
+  background: var(--accent); color: #111;
+}
+.rental-links { margin: 0; padding-left: 20px; }
+.rental-links li { margin: 4px 0; }
+.link-note { display: block; color: var(--muted); }
+
 footer { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px; color: var(--muted); font-size: .8rem; }
 
 @media (max-width: 520px) {
@@ -185,6 +234,9 @@ footer { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 40px;
   #search-form { flex-direction: column; }
   #search-form input, #search-form button { font-size: 16px; } /* 16px stops iPhones zooming in on tap */
   main { padding-top: 20px; }
+  /* Phones: three equal columns, so the tabs stay in one row (long names wrap inside their own tab). */
+  nav.tabs { display: grid; grid-template-columns: repeat(3, 1fr); }
+  nav.tabs a { padding: 8px 4px; font-size: .85rem; text-align: center; line-height: 1.25; }
   h1 { font-size: 1.6rem; }
   /* Phones: turn each table row into a small card instead of scrolling sideways. */
   table, tbody, tr, td { display: block; width: 100%; }

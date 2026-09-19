@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Neighborhoods · RentCheck PGH</title>
+  <meta name="description" content="Pittsburgh neighborhoods ranked by unresolved building and fire safety cases per 1,000 residents.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 15 16 4l12 11v13H4z' fill='%23b8860b'/%3E%3Crect x='13' y='19' width='6' height='9' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <button type="button" id="theme-toggle" class="theme-toggle"></button>
+      <h1>RentCheck <span>PGH</span></h1>
+      <p class="tagline">Look up a Pittsburgh address before you sign a lease.</p>
+      <nav class="tabs" aria-label="Sections">
+        <a href="/">Check an address</a>
+        <a href="neighborhoods.html" aria-current="page">Neighborhoods</a>
+        <a href="rentals.html">Rentals near you</a>
+      </nav>
+    </header>
+
+    <h2 id="ranking-title" class="page-title">Unresolved building &amp; fire safety cases per 1,000 residents</h2>
+
+    <!-- Honesty box: people will assume a neighborhood ranking is about crime. It isn't. -->
+    <div class="card callout">
+      <p><b>This ranks housing conditions, not crime.</b> It counts building and fire safety cases
+        from city inspection records. The city's open crime data stopped updating in November 2023,
+        so there is no live crime ranking here.</p>
+    </div>
+
+    <p id="basis" class="note"></p>
+    <p id="status" role="status" aria-live="polite" class="loading">Loading neighborhoods...</p>
+
+    <section id="ranking" hidden>
+      <p id="direction" class="note"></p>
+      <label for="filter" class="filter-label">Find a neighborhood</label>
+      <input id="filter" class="filter" type="search" placeholder="e.g. Oakland" autocomplete="off">
+
+      <div class="table-wrap">
+        <table role="table" class="rank-table">
+          <caption class="visually-hidden">Ranked neighborhoods</caption>
+          <thead role="rowgroup">
+            <tr role="row">
+              <th role="columnheader" scope="col">Rank</th>
+              <th role="columnheader" scope="col">Neighborhood</th>
+              <th role="columnheader" scope="col" id="unit-header">Per 1,000 residents</th>
+              <th role="columnheader" scope="col">Unresolved, last 3 years</th>
+              <th role="columnheader" scope="col">Residents (2020)</th>
+            </tr>
+          </thead>
+          <tbody id="ranked" role="rowgroup"></tbody>
+        </table>
+      </div>
+      <p id="filter-empty" class="empty" hidden>No neighborhood matches that name.</p>
+
+      <div id="unranked-box" hidden>
+        <h2>Not ranked</h2>
+        <p class="note">We couldn't compute a fair rate for these, so they aren't in the ranking.</p>
+        <ul id="unranked" class="unranked"></ul>
+      </div>
+
+      <p id="api-note" class="note"></p>
+    </section>
+
+    <footer>
+      Data: City of Pittsburgh inspection records via WPRDC, 2020 Census population.
+      Not legal advice. A violation is not proof of a bad landlord.
+    </footer>
+  </main>
+  <script src="api.js"></script>
+  <script src="neighborhoods.js"></script>
+</body>
+</html>

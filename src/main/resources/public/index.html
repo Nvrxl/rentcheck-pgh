@@ -17,6 +17,12 @@
       <button type="button" id="theme-toggle" class="theme-toggle"></button>
       <h1>RentCheck <span>PGH</span></h1>
       <p class="tagline">Look up a Pittsburgh address before you sign a lease.</p>
+      <!-- Same nav on all three pages; aria-current marks the page you're on. -->
+      <nav class="tabs" aria-label="Sections">
+        <a href="/" aria-current="page">Check an address</a>
+        <a href="neighborhoods.html">Neighborhoods</a>
+        <a href="rentals.html">Rentals near you</a>
+      </nav>
     </header>
 
     <form id="search-form">
@@ -51,6 +57,13 @@
         <div class="card"><b id="stat-total">0</b><small>violations</small></div>
         <div class="card"><b id="stat-open">0</b><small>still unresolved</small></div>
         <div class="card"><b id="stat-recent">-</b><small>most recent</small></div>
+      </div>
+
+      <!-- Questions from the backend (templates chosen by what the records mention). Hidden if the list is empty. -->
+      <div id="questions" class="card questions" hidden>
+        <h2>Questions to ask before you sign</h2>
+        <p class="note">A starting point, not an accusation.</p>
+        <ul id="questions-list" class="checklist"></ul>
       </div>
 
       <!-- "The building": satellite view from Google Maps' free embed (no API key needed).

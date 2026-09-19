@@ -168,6 +168,7 @@ function render(r) {
 
   renderAlsoCheck(searchedAddress);
   renderPlace(searchedAddress);
+  renderQuestions(r.questions);
   reportEl.hidden = false;
 }
 
@@ -248,4 +249,22 @@ function renderPlace(address) {
     + "&t=k&z=19&output=embed";   // t=k: satellite, z=19: zoomed in on the building
   const frame = document.getElementById("place-map");
   if (frame.src !== src) frame.src = src;   // don't reload the map if it's the same address
+}
+
+// "Questions to ask before you sign": a checklist the renter can tick off while talking to the landlord.
+// Older servers don't send the field at all, so anything that isn't a non-empty list hides the card.
+function renderQuestions(questions) {
+  const list = Array.isArray(questions) ? questions.filter((q) => typeof q === "string" && q.trim()) : [];
+  document.getElementById("questions").hidden = list.length === 0;
+  document.getElementById("questions-list").replaceChildren(...list.map((q, i) => {
+    const li = document.createElement("li");
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.id = `question-${i}`;
+    const label = document.createElement("label");
+    label.htmlFor = box.id;          // clicking the text ticks the box, and screen readers read it
+    label.textContent = q;
+    li.append(box, label);
+    return li;
+  }));
 }
