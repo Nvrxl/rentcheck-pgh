@@ -94,6 +94,62 @@ public class WprdcClient {
         return get(BASE + "datastore_search_sql?sql=" + URLEncoder.encode(sql, StandardCharsets.UTF_8));
     }
 
+    private static final int HOTSPOT_LIMIT = 10000;
+
+    /**
+     * TESTING HELPER: addresses with the most STILL-OPEN building/fire-safety cases.
+     * Use it to find interesting addresses to try (and to see if the risk rating looks right).
+     * Optional neighborhood filter, e.g. "Oakland" matches North/South/Central Oakland.
+     *
+     * The city's SQL endpoint refused our first attempt (HTTP 403), so this uses the plain search
+     * endpoint (filters) and does the counting here in Java instead.
+     */
+    public JsonNode hotspots(String neighborhood) throws IOException, InterruptedException {
+        String hood = neighborhood == null ? "" : neighborhood.trim();
+        if (!hood.matches("[A-Za-z .'-]{0,40}")) {
+            throw new IOException("neighborhood may only contain letters, spaces, . ' and -");
+        }
+        String filters = "{\"status\":[\"In Violation\",\"In Court\",\"Clean & Lien\",\"Appealed\"],"
+                + "\"case_file_type\":[\"Building Maintenance\",\"Building Maintenance Issues\",\"Fire Safety System Issue\"]}";
+        String url = BASE + "datastore_search?resource_id=" + resourceId()
+                + "&limit=" + HOTSPOT_LIMIT
+                + "&fields=" + URLEncoder.encode("address,casefile_number,neighborhood", StandardCharsets.UTF_8)
+                + "&sort=" + URLEncoder.encode("investigation_date desc", StandardCharsets.UTF_8)
+                + "&filters=" + URLEncoder.encode(filters, StandardCharsets.UTF_8);
+        JsonNode records = get(url).path("result").path("records");
+        return summarizeHotspots(records, hood, mapper, HOTSPOT_LIMIT);
+    }
+
+    /** Counts distinct cases per address (top 25). Separate and public so it can be tested without the network. */
+    public static JsonNode summarizeHotspots(JsonNode records, String hood, ObjectMapper mapper, int limit) {
+        String wanted = hood == null ? "" : hood.toLowerCase();
+        java.util.Map<String, java.util.Set<String>> casesByAddress = new java.util.HashMap<>();
+        java.util.Map<String, String> hoodByAddress = new java.util.HashMap<>();
+        for (JsonNode r : records) {
+            String address = r.path("address").asText("");
+            String hoodName = r.path("neighborhood").asText("");
+            if (address.isEmpty()) continue;
+            if (!wanted.isEmpty() && !hoodName.toLowerCase().contains(wanted)) continue;
+            casesByAddress.computeIfAbsent(address, k -> new java.util.HashSet<>()).add(r.path("casefile_number").asText(""));
+            hoodByAddress.put(address, hoodName);
+        }
+        com.fasterxml.jackson.databind.node.ArrayNode top = mapper.createArrayNode();
+        casesByAddress.entrySet().stream()
+                .sorted((a, b) -> b.getValue().size() - a.getValue().size())
+                .limit(25)
+                .forEach(e -> {
+                    com.fasterxml.jackson.databind.node.ObjectNode o = top.addObject();
+                    o.put("address", e.getKey());
+                    o.put("open_cases", e.getValue().size());
+                    o.put("neighborhood", hoodByAddress.get(e.getKey()));
+                });
+        com.fasterxml.jackson.databind.node.ObjectNode result = mapper.createObjectNode();
+        result.put("rows_scanned", records.size());
+        result.put("truncated", records.size() >= limit);
+        result.set("hotspots", top);
+        return result;
+    }
+
     /** Shows the real column names plus one example row. Used by /api/debug/fields. */
     public JsonNode describeFields() throws IOException, InterruptedException {
         return get(BASE + "datastore_search?resource_id=" + resourceId() + "&limit=1");

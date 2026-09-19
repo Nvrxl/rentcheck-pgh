@@ -50,6 +50,12 @@ public class App {
             ctx.json(wprdc.searchByAddress(AddressNormalizer.searchTerms(address), 50));
         });
 
+        // e.g. /api/debug/hotspots?neighborhood=Oakland -> addresses with the most open building/fire safety cases
+        app.get("/api/debug/hotspots", ctx -> {
+            String hood = ctx.queryParam("neighborhood");
+            ctx.json(wprdc.hotspots(hood == null ? "" : hood));
+        });
+
         // e.g. /api/debug/distinct?field=investigation_outcome  -> every real value + how common
         app.get("/api/debug/distinct", ctx -> {
             String field = ctx.queryParam("field");
