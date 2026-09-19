@@ -83,22 +83,21 @@
 <path d="M910,392 q13.25,-4 26.5,0 t26.5,0" stroke-width="1.5"/>
 <path d="M199,378 q9.5,-4 19.0,0 t19.0,0" stroke-width="1.5"/>
 <path d="M1013,392 q11.5,-4 23.0,0 t23.0,0" stroke-width="1.5"/>
-<!-- Cars (animated) -->
+<!-- Traffic (animated) -->
 <style>
-  /* Cars loop across the deck. Page CSS swaps to the still bridge.svg for reduced motion or "Pause". */
-  .car { animation: east 16s linear infinite; }
-  .west { animation-name: west; }
-  .c2 { animation-duration: 21s; animation-delay: -7s; }
-  .c3 { animation-duration: 13s; animation-delay: -3s; }
-  .c4 { animation-duration: 19s; animation-delay: -12s; }
-  .c5 { animation-duration: 24s; animation-delay: -18s; }
-  @keyframes east { from { transform: translate(-60px, 299px); } to { transform: translate(1260px, 299px); } }
-  @keyframes west { from { transform: translate(1260px, 299px) scale(-.85, .85); } to { transform: translate(-60px, 299px) scale(-.85, .85); } }
-  @media (prefers-reduced-motion: reduce) { .car { animation: none; display: none; } }
+  /* Vehicles loop across the deck. Page CSS swaps to the still bridge.svg for reduced motion or "Pause". */
+  .v { animation: east 22s linear infinite; }
+  .w { animation: west 19s linear infinite; }
+  @keyframes east { from { transform: translate(-90px, 299px); } to { transform: translate(1290px, 299px); } }
+  @keyframes west { from { transform: translate(1290px, 299px) scale(-.85, .85); } to { transform: translate(-90px, 299px) scale(-.85, .85); } }
+  @media (prefers-reduced-motion: reduce) { .v, .w { animation: none; display: none; } }
 </style>
-<g class="car c1"><rect x="0" y="-9" width="26" height="7" rx="2.5" fill="#8a929c" stroke="none"/><rect x="5.7" y="-13" width="13.0" height="5" rx="2" fill="#8a929c" stroke="none"/><circle cx="5.7" cy="-1.5" r="2" fill="#8a929c" stroke="none"/><circle cx="20.3" cy="-1.5" r="2" fill="#8a929c" stroke="none"/></g>
-<g class="car c2"><rect x="0" y="-9" width="30" height="7" rx="2.5" fill="#8a929c" stroke="none"/><rect x="6.6" y="-13" width="15.0" height="5" rx="2" fill="#8a929c" stroke="none"/><circle cx="6.6" cy="-1.5" r="2" fill="#8a929c" stroke="none"/><circle cx="23.4" cy="-1.5" r="2" fill="#8a929c" stroke="none"/></g>
-<g class="car c4 "><rect x="0" y="-9" width="24" height="7" rx="2.5" fill="#8a929c" stroke="none"/><rect x="5.3" y="-13" width="12.0" height="5" rx="2" fill="#8a929c" stroke="none"/><circle cx="5.3" cy="-1.5" r="2" fill="#8a929c" stroke="none"/><circle cx="18.7" cy="-1.5" r="2" fill="#8a929c" stroke="none"/></g>
-<g class="car west c3"><rect x="0" y="-9" width="28" height="7" rx="2.5" fill="#8a929c" stroke="none"/><rect x="6.2" y="-13" width="14.0" height="5" rx="2" fill="#8a929c" stroke="none"/><circle cx="6.2" cy="-1.5" r="2" fill="#8a929c" stroke="none"/><circle cx="21.8" cy="-1.5" r="2" fill="#8a929c" stroke="none"/></g>
-<g class="car west c5"><rect x="0" y="-9" width="32" height="7" rx="2.5" fill="#8a929c" stroke="none"/><rect x="7.0" y="-13" width="16.0" height="5" rx="2" fill="#8a929c" stroke="none"/><circle cx="7.0" cy="-1.5" r="2" fill="#8a929c" stroke="none"/><circle cx="25.0" cy="-1.5" r="2" fill="#8a929c" stroke="none"/></g>
+<g class="v sedan" style="animation-delay:0.00s"><rect x="0" y="-9" width="30" height="6" rx="2.5" fill="#8a929c" stroke="none"/><path d="M7,-9 L10,-14 L20,-14 L24,-9 Z" fill="#8a929c" stroke="none"/><circle cx="7" cy="-1.8" r="2.2" fill="#8a929c" stroke="none"/><circle cx="23" cy="-1.8" r="2.2" fill="#8a929c" stroke="none"/></g>
+<g class="v semi" style="animation-delay:-5.50s"><rect x="0" y="-19" width="52" height="14" rx="1" fill="#8a929c" stroke="none"/><rect x="52" y="-8" width="5" height="2" fill="#8a929c" stroke="none"/><path d="M56,-5 L56,-17 L66,-17 L70,-11 L72,-11 L72,-5 Z" fill="#8a929c" stroke="none"/><circle cx="6" cy="-1.8" r="2.4" fill="#8a929c" stroke="none"/><circle cx="12" cy="-1.8" r="2.4" fill="#8a929c" stroke="none"/><circle cx="42" cy="-1.8" r="2.4" fill="#8a929c" stroke="none"/><circle cx="48" cy="-1.8" r="2.4" fill="#8a929c" stroke="none"/><circle cx="60" cy="-1.8" r="2.4" fill="#8a929c" stroke="none"/><circle cx="68" cy="-1.8" r="2.4" fill="#8a929c" stroke="none"/></g>
+<g class="v sports" style="animation-delay:-11.00s"><path d="M0,-3 L2,-7 L10,-8 L15,-11 L22,-11 L28,-6 L31,-5 L31,-2 L0,-2 Z" fill="#8a929c" stroke="none"/><circle cx="6" cy="-1.8" r="2" fill="#8a929c" stroke="none"/><circle cx="24" cy="-1.8" r="2" fill="#8a929c" stroke="none"/></g>
+<g class="v pickup" style="animation-delay:-16.50s"><rect x="0" y="-8" width="34" height="5" rx="1.5" fill="#8a929c" stroke="none"/><rect x="19" y="-14" width="10" height="7" rx="1.5" fill="#8a929c" stroke="none"/><rect x="0" y="-10" width="17" height="2" fill="#8a929c" stroke="none"/><circle cx="7" cy="-1.8" r="2.4" fill="#8a929c" stroke="none"/><circle cx="27" cy="-1.8" r="2.4" fill="#8a929c" stroke="none"/></g>
+<g class="w bus" style="animation-delay:-2.38s"><rect x="0" y="-18" width="56" height="15" rx="3" fill="#8a929c" stroke="none"/><circle cx="11" cy="-1.8" r="2.6" fill="#8a929c" stroke="none"/><circle cx="45" cy="-1.8" r="2.6" fill="#8a929c" stroke="none"/></g>
+<g class="w suv" style="animation-delay:-7.12s"><path d="M0,-4 L0,-14 Q0,-16 2,-16 L22,-16 L28,-10 L32,-9 L32,-4 Z" fill="#8a929c" stroke="none"/><circle cx="7" cy="-1.8" r="2.5" fill="#8a929c" stroke="none"/><circle cx="25" cy="-1.8" r="2.5" fill="#8a929c" stroke="none"/></g>
+<g class="w sedan" style="animation-delay:-11.88s"><rect x="0" y="-9" width="30" height="6" rx="2.5" fill="#8a929c" stroke="none"/><path d="M7,-9 L10,-14 L20,-14 L24,-9 Z" fill="#8a929c" stroke="none"/><circle cx="7" cy="-1.8" r="2.2" fill="#8a929c" stroke="none"/><circle cx="23" cy="-1.8" r="2.2" fill="#8a929c" stroke="none"/></g>
+<g class="w pickup" style="animation-delay:-16.62s"><rect x="0" y="-8" width="34" height="5" rx="1.5" fill="#8a929c" stroke="none"/><rect x="19" y="-14" width="10" height="7" rx="1.5" fill="#8a929c" stroke="none"/><rect x="0" y="-10" width="17" height="2" fill="#8a929c" stroke="none"/><circle cx="7" cy="-1.8" r="2.4" fill="#8a929c" stroke="none"/><circle cx="27" cy="-1.8" r="2.4" fill="#8a929c" stroke="none"/></g>
 </svg>
