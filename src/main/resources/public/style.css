@@ -18,6 +18,16 @@
   }
 }
 * { box-sizing: border-box; }
+
+/* Faded Pittsburgh bridge behind the whole page.
+   position: fixed pins it to the window, so it stays put while you scroll;
+   z-index: -1 keeps it behind every element; pointer-events: none means it can't block clicks. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: url("bridge.svg") no-repeat center bottom 8vh / min(1400px, 140vw) auto;
+  opacity: .22;
+}
+@media (prefers-color-scheme: dark) { body::before { opacity: .3; } }
 body {
   margin: 0; background: var(--bg); color: var(--text);
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
