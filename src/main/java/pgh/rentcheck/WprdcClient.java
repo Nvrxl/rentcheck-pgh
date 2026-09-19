@@ -173,6 +173,35 @@ public class WprdcClient {
         return get(BASE + "datastore_search?resource_id=" + POPULATION_RESOURCE_ID + "&limit=500");
     }
 
+    /**
+     * DEVELOPER HELPER: peek at another WPRDC dataset (e.g. "property-assessments") before we write code
+     * against it. Lists its resources and shows the column names plus two example rows of the first
+     * queryable one, so we check real column names instead of guessing.
+     */
+    public JsonNode peek(String packageId) throws IOException, InterruptedException {
+        if (packageId == null || !packageId.matches("[a-z0-9-]{1,80}")) {
+            throw new IOException("package must be a WPRDC dataset id like property-assessments");
+        }
+        JsonNode resources = get(BASE + "package_show?id=" + packageId).path("result").path("resources");
+        com.fasterxml.jackson.databind.node.ArrayNode list = mapper.createArrayNode();
+        String chosen = null;
+        for (JsonNode r : resources) {
+            com.fasterxml.jackson.databind.node.ObjectNode o = list.addObject();
+            o.put("id", r.path("id").asText());
+            o.put("name", r.path("name").asText());
+            o.put("format", r.path("format").asText());
+            o.put("datastore_active", r.path("datastore_active").asBoolean(false));
+            if (chosen == null && r.path("datastore_active").asBoolean(false)) chosen = r.path("id").asText();
+        }
+        com.fasterxml.jackson.databind.node.ObjectNode out = mapper.createObjectNode();
+        out.set("resources", list);
+        out.put("firstQueryableResource", chosen);
+        if (chosen != null) {
+            out.set("sample", get(BASE + "datastore_search?resource_id=" + chosen + "&limit=2").path("result"));
+        }
+        return out;
+    }
+
     /** Shows the real column names plus one example row. Used by /api/debug/fields. */
     public JsonNode describeFields() throws IOException, InterruptedException {
         return get(BASE + "datastore_search?resource_id=" + resourceId() + "&limit=1");

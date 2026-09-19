@@ -20,7 +20,8 @@ public final class Models {
             String summary,           // plain-English sentence(s) for renters
             List<CategoryCount> categories,
             List<ViolationItem> violations,
-            String note               // extra warning shown in the UI (e.g. "SAMPLE DATA")
+            String note,              // extra warning shown in the UI (e.g. "SAMPLE DATA")
+            List<String> questions    // "questions to ask before you sign", chosen from templates
     ) {}
 
     public record CategoryCount(String name, int count) {}

@@ -26,10 +26,15 @@ Response 200:
       "codeSection": "CITY CODE 619.06(A)"
     }
   ],
-  "note": "Shown under the report as a small warning."
+  "note": "Shown under the report as a small warning.",
+  "questions": [
+    "The city lists 1 building or fire safety case here that looks unresolved. Ask what has been done about it, when it will be fixed, and get the answer in writing.",
+    "How do I report a repair, and how quickly are repairs usually done? Can I see the most recent inspection report?"
+  ]
 }
 ```
 
+- `questions` (NEW) is a list of 3 to 6 plain-English "questions to ask before you sign", written from templates and chosen by what the city records mention (open cases first; a closing "how are repairs handled" question always last). Show it as a checklist card, e.g. "Questions to ask before you sign". It can be an empty list on old servers, so handle `undefined`. Add a line under it like "A starting point, not an accusation: the questions don't say anyone did anything wrong."
 - `riskLevel` is one of `LOW`, `MEDIUM`, `HIGH`, `UNKNOWN`. `UNKNOWN` means no records found (NOT "safe").
 - Any field except `query` and the counts may be `null` or empty. The page must handle that.
 - `violations` is newest first. **Each entry is one city CASE**, not one row: the city stores several rows per case (inspection, re-inspection, detail), and the backend merges them. `totalViolations` counts cases.

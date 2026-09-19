@@ -89,7 +89,7 @@ public class ReportService {
 
         return new Report(address, items.size(), open, mostRecent, risk,
                 summarize(items.size(), open, safety, safetyOpen, mostRecent),
-                categorize(items), items, note);
+                categorize(items), items, note, Questions.forRecords(items));
     }
 
     /**
@@ -282,6 +282,7 @@ public class ReportService {
         return new Report("123 Example St (SAMPLE)", 3, 1, "2025-06-02", "MEDIUM",
                 summarize(3, 1, 2, 1, "2025-06-02"),
                 categorize(items), items,
-                "SAMPLE DATA - not a real address. Used only for building the interface.");
+                "SAMPLE DATA - not a real address. Used only for building the interface.",
+                Questions.forRecords(items));
     }
 }
