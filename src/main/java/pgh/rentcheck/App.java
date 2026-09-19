@@ -40,6 +40,16 @@ public class App {
 
         app.get("/api/debug/fields", ctx -> ctx.json(wprdc.describeFields()));
 
+        // e.g. /api/debug/rows?address=1231 Lakewood St  -> the RAW city rows for an address (casefile numbers etc.)
+        app.get("/api/debug/rows", ctx -> {
+            String address = ctx.queryParam("address");
+            if (address == null || address.isBlank()) {
+                ctx.status(400).json(Map.of("error", "Please provide ?address=..."));
+                return;
+            }
+            ctx.json(wprdc.searchByAddress(AddressNormalizer.searchTerms(address), 50));
+        });
+
         // e.g. /api/debug/distinct?field=investigation_outcome  -> every real value + how common
         app.get("/api/debug/distinct", ctx -> {
             String field = ctx.queryParam("field");

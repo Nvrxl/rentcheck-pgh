@@ -18,7 +18,13 @@ import java.util.Set;
  * "No Wrapper" track wants). The summary text is built from templates.
  *
  * This is the "brain" of the project and where most of the interesting work is.
- * See docs/TASKS.md for the to-do list (address matching, better scoring, owner matching).
+ * See docs/TASKS.md for the to-do list (scoring, better matching, owner matching).
+ *
+ * KEY FACT ABOUT THE DATA: the city stores SEVERAL ROWS PER CASE. Example: case
+ * CF-ES-2026-008155 (a tire in a yard) is 3 rows: the first inspection ("Violation Found"),
+ * a re-inspection ("Violation Resolved", finding "CORRECTED"), and a detail row with the
+ * legal code section. Counting rows would say "3 violations"; the honest answer is 1.
+ * So we group rows by casefile_number and count CASES.
  */
 public class ReportService {
     private static final int MAX_RECORDS = 200;
@@ -30,39 +36,49 @@ public class ReportService {
     }
 
     public Report buildReport(String address) throws Exception {
-        String normalized = AddressNormalizer.normalize(address);
-        JsonNode records = wprdc.searchByAddress(normalized, MAX_RECORDS).path("result").path("records");
+        String searchTerms = AddressNormalizer.searchTerms(address);   // e.g. "1829 MCNARY"
+        JsonNode records = wprdc.searchByAddress(searchTerms, MAX_RECORDS).path("result").path("records");
 
-        List<ViolationItem> items = new ArrayList<>();
-        int rowsForAddress = 0;   // investigations on file for this address (violation or not)
+        // Step 1: keep only rows for this exact address, grouped by case number.
+        Map<String, List<JsonNode>> byCase = new LinkedHashMap<>();
+        int rowsForAddress = 0;
         for (JsonNode r : records) {
             // The search can return look-alikes (e.g. "1231 LAKEWOOD" vs "12310 LAKEWOOD"): double check.
             if (!AddressNormalizer.matches(text(r, Fields.ADDRESS), address)) continue;
             rowsForAddress++;
-            // Many rows are NOT violations (nothing found, voided, sent to another department...).
-            boolean hasDetail = !isBlank(text(r, Fields.DESCRIPTION)) || !isBlank(text(r, Fields.CODE));
-            if (!isViolation(text(r, Fields.OUTCOME), hasDetail)) continue;
+            String caseId = text(r, Fields.CASEFILE);
+            if (isBlank(caseId)) caseId = "row-" + r.path("_id").asText();
+            byCase.computeIfAbsent(caseId, k -> new ArrayList<>()).add(r);
+        }
 
-            items.add(new ViolationItem(
-                    day(text(r, Fields.DATE)),
-                    text(r, Fields.CASE_TYPE),   // shown in the "Code" column: e.g. "Refuse or Recycling Violations"
-                    firstNonBlank(text(r, Fields.DESCRIPTION), text(r, Fields.FINDINGS)),
-                    text(r, Fields.STATUS)));
+        // Step 2: one violation per case (or nothing, if the case isn't a real violation).
+        List<ViolationItem> items = new ArrayList<>();
+        for (Map.Entry<String, List<JsonNode>> e : byCase.entrySet()) {
+            ViolationItem item = toViolation(e.getKey(), e.getValue());
+            if (item != null) items.add(item);
         }
         // Newest first. (ISO dates sort correctly as text; blanks go last.)
         items.sort(Comparator.comparing(ViolationItem::date, Comparator.nullsLast(Comparator.<String>reverseOrder())));
 
-        int open = 0;
+        int open = 0;          // unresolved, any kind
+        int safety = 0;        // building & fire safety violations, any status
+        int safetyOpen = 0;    // ...that are still unresolved
         for (ViolationItem v : items) {
-            if (looksOpen(v.status())) open++;
+            boolean isOpen = looksOpen(v.status());
+            boolean isSafety = Categories.SAFETY.equals(Categories.bucket(v.code()));
+            if (isOpen) open++;
+            if (isSafety) safety++;
+            if (isSafety && isOpen) safetyOpen++;
         }
 
         String mostRecent = items.isEmpty() ? null : items.get(0).date();
-        String risk = riskLevel(items.size(), open);
+        String risk = riskLevel(items.size(), open, safety, safetyOpen);
 
-        int notCounted = rowsForAddress - items.size();
-        String note = "Matched " + rowsForAddress + " city record" + (rowsForAddress == 1 ? "" : "s")
-                + " for this address; " + items.size() + " count as violations."
+        int cases = byCase.size();
+        int notCounted = cases - items.size();
+        String note = "Matched " + rowsForAddress + " city row" + (rowsForAddress == 1 ? "" : "s")
+                + " for this address, grouped into " + cases + " case" + (cases == 1 ? "" : "s")
+                + "; " + items.size() + (items.size() == 1 ? " counts" : " count") + " as a violation."
                 + (notCounted > 0 ? " The other " + notCounted + " are not counted (no violation found, "
                 + "voided, sent to another department, or no recorded outcome)." : "")
                 + " A violation is not proof of a bad landlord.";
@@ -71,15 +87,16 @@ public class ReportService {
         }
 
         return new Report(address, items.size(), open, mostRecent, risk,
-                summarize(items.size(), open, mostRecent),
+                summarize(items.size(), open, safety, safetyOpen, mostRecent),
                 categorize(items), items, note);
     }
 
     /**
      * Outcomes that mean "a violation was found", based on the REAL values in the city data
      * (counted Sat Sep 19 2026 via /api/debug/distinct?field=investigation_outcome).
-     * Everything else is NOT counted: "No Violation Found", "Case Voided", "Do Not Display",
-     * "Sending back to 311 to Assign to Another Department", "Assigning to Another OneStopPGH Department".
+     * Everything else does not by itself make a case a violation: "No Violation Found",
+     * "Case Voided", "Do Not Display", "Sending back to 311 to Assign to Another Department",
+     * "Assigning to Another OneStopPGH Department".
      */
     private static final Set<String> VIOLATION_OUTCOMES = Set.of(
             "violation found",
@@ -92,24 +109,65 @@ public class ReportService {
             "create lien");
 
     /**
-     * Rule: a record counts as a violation if its outcome is in the list above.
-     * About a third of rows (208k of 638k) have NO outcome. For those we count the row only if it
-     * names a specific violation (description or code section), which older tickets do.
-     * TODO (Michael): check what the no-outcome rows really are (look at their status and
-     * case_file_type) and tighten this rule. Explain the rule on the "How we score" page.
+     * Combines all rows of ONE case into one violation, or returns null if it is not a violation.
+     *
+     * A case counts as a violation if ANY of its rows either has a violation outcome
+     * (see list above) or names a specific violation (description / legal code section: the
+     * "detail row", which older cases have instead of an outcome).
+     * A case does NOT count if it was voided/hidden ("Case Voided", "Do Not Display") or
+     * its status is "Cancelled".
+     *
+     * TODO (Michael): confirm this rule on a few more addresses with /api/debug/rows and
+     * explain it on the "How we score" page.
      */
-    static boolean isViolation(String outcome, boolean hasViolationDetail) {
-        if (outcome == null || outcome.isBlank()) return hasViolationDetail;
-        return VIOLATION_OUTCOMES.contains(outcome.trim().toLowerCase());
+    private static ViolationItem toViolation(String caseId, List<JsonNode> rows) {
+        String status = null, caseType = null, description = null, codeSection = null;
+        String foundFinding = null, anyFinding = null, issued = null, resolved = null;
+        boolean voided = false, counts = false;
+
+        for (JsonNode r : rows) {
+            String outcome = lower(text(r, Fields.OUTCOME));
+            String rowStatus = text(r, Fields.STATUS);
+            if ("cancelled".equalsIgnoreCase(rowStatus)
+                    || "case voided".equals(outcome) || "do not display".equals(outcome)) {
+                voided = true;
+            }
+            if (status == null) status = rowStatus;
+            if (caseType == null) caseType = text(r, Fields.CASE_TYPE);
+
+            String desc = text(r, Fields.DESCRIPTION);
+            String code = text(r, Fields.CODE);
+            if (description == null && !isBlank(desc)) description = desc;
+            if (codeSection == null && !isBlank(code)) codeSection = code;
+            if (!isBlank(desc) || !isBlank(code)) counts = true;                 // the "detail row"
+            if (outcome != null && VIOLATION_OUTCOMES.contains(outcome)) counts = true;
+
+            String finding = text(r, Fields.FINDINGS);
+            if (!isBlank(finding)) {
+                if (anyFinding == null) anyFinding = finding;
+                if ("violation found".equals(outcome) && foundFinding == null) foundFinding = finding;
+            }
+
+            String date = day(text(r, Fields.DATE));
+            if (date != null) {
+                if (issued == null || date.compareTo(issued) < 0) issued = date;   // earliest = when it was issued
+                if ("violation resolved".equals(outcome) && (resolved == null || date.compareTo(resolved) > 0)) {
+                    resolved = date;
+                }
+            }
+        }
+
+        if (voided || !counts) return null;
+        String what = description != null ? description : (foundFinding != null ? foundFinding : anyFinding);
+        return new ViolationItem(issued, caseType, what, status, caseId, resolved, codeSection);
+    }
+
+    private static String lower(String s) {
+        return s == null ? null : s.trim().toLowerCase();
     }
 
     private static boolean isBlank(String s) {
         return s == null || s.isBlank();
-    }
-
-    private static String firstNonBlank(String a, String b) {
-        if (a != null && !a.isBlank()) return a;
-        return (b == null || b.isBlank()) ? null : b;
     }
 
     /** "2026-02-18T00:00:00" -> "2026-02-18" */
@@ -119,46 +177,60 @@ public class ReportService {
     }
 
     // ---------------------------------------------------------------------
-    // TODO (Michael): everything below is a first-draft placeholder.
+    // Status, score, wording. First drafts: tune and document them (docs/HOW_WE_SCORE.md).
     // ---------------------------------------------------------------------
 
-    /** TODO: check the real status values (see /api/debug/fields) and fix this. */
+    /**
+     * Statuses that mean "still not resolved" (real values, counted Sat Sep 19 2026):
+     * Closed 584k | In Court 40k | In Violation 7.7k | Clean & Lien 5.2k | Ready to Close 664 |
+     * Under Investigation 152 | Cancelled 144 | Appealed 25.
+     * "Ready to Close" is treated as resolved; "Under Investigation" is not a confirmed violation yet.
+     */
+    private static final Set<String> OPEN_STATUSES = Set.of("in violation", "in court", "clean & lien", "appealed");
+
     static boolean looksOpen(String status) {
-        if (status == null || status.isBlank()) return false;
-        String s = status.toLowerCase();
-        return !(s.contains("close") || s.contains("complet") || s.contains("resolv")
-                || s.contains("complied") || s.contains("abate"));
+        return status != null && OPEN_STATUSES.contains(status.trim().toLowerCase());
     }
 
-    /** TODO: replace with a real score (weight severity, recency, open vs closed). */
-    static String riskLevel(int total, int open) {
+    /**
+     * FIRST-DRAFT score. The thresholds are guesses; tune them and document them in
+     * docs/HOW_WE_SCORE.md. Key idea: only BUILDING & FIRE SAFETY problems drive the rating,
+     * because about half of all city records are weeds and trash, which say little about
+     * whether an apartment is safe to live in.
+     */
+    static String riskLevel(int total, int open, int safety, int safetyOpen) {
         if (total == 0) return "UNKNOWN"; // no records != safe!
-        if (open >= 5 || total >= 25) return "HIGH";
-        if (open >= 1 || total >= 8) return "MEDIUM";
+        if (safetyOpen >= 2 || safety >= 10) return "HIGH";
+        if (safetyOpen >= 1 || safety >= 3 || open >= 5) return "MEDIUM";
         return "LOW";
     }
 
     /** Template-based plain English. Keep it factual and careful. */
-    static String summarize(int total, int open, String mostRecent) {
+    static String summarize(int total, int open, int safety, int safetyOpen, String mostRecent) {
         if (total == 0) {
-            return "We found no violation records for this search. That does not guarantee the "
-                    + "building is problem-free: the address may not have matched, or issues may "
-                    + "not have been reported.";
+            return "We found no violation records for this address. That does not guarantee the "
+                    + "building is problem-free: the address may not have matched, issues may not "
+                    + "have been reported, or the address may be outside the City of Pittsburgh "
+                    + "(our data only covers the city).";
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("We found ").append(total).append(total == 1 ? " violation record" : " violation records");
-        sb.append(", ").append(open).append(open == 1 ? " of which looks" : " of which look").append(" unresolved");
-        if (mostRecent != null) sb.append(". The most recent one is dated ").append(mostRecent);
-        sb.append(".");
+        sb.append("We found ").append(total).append(total == 1 ? " violation" : " violations");
+        sb.append(", ").append(open).append(open == 1 ? " of which is" : " of which are").append(" still unresolved. ");
+        if (safety == 0) {
+            sb.append("None are building or fire safety issues.");
+        } else {
+            sb.append(safety).append(safety == 1 ? " is a building or fire safety issue" : " are building or fire safety issues");
+            sb.append(" (").append(safetyOpen).append(" unresolved).");
+        }
+        if (mostRecent != null) sb.append(" The most recent was issued ").append(mostRecent).append(".");
         return sb.toString();
     }
 
-    /** TODO: group by a smarter category (fire safety, plumbing, structural...) using the code section. */
+    /** Groups violations into renter-friendly categories (see Categories.java). */
     static List<CategoryCount> categorize(List<ViolationItem> items) {
         Map<String, Integer> counts = new LinkedHashMap<>();
         for (ViolationItem v : items) {
-            String key = (v.code() == null || v.code().isBlank()) ? "Other" : v.code();
-            counts.merge(key, 1, Integer::sum);
+            counts.merge(Categories.bucket(v.code()), 1, Integer::sum);
         }
         List<CategoryCount> out = new ArrayList<>();
         counts.forEach((k, v) -> out.add(new CategoryCount(k, v)));
@@ -174,11 +246,14 @@ public class ReportService {
     /** Fake data so the frontend can be built before the real data works. Clearly labelled. */
     public static Report sample() {
         List<ViolationItem> items = List.of(
-                new ViolationItem("2025-06-02", "Sample code A", "SAMPLE: smoke detector missing", "Open"),
-                new ViolationItem("2024-11-15", "Sample code B", "SAMPLE: broken stair railing", "Closed"),
-                new ViolationItem("2023-03-09", "Sample code A", "SAMPLE: smoke detector not working", "Closed"));
+                new ViolationItem("2025-06-02", "Fire Safety System Issue", "SAMPLE: smoke detector missing",
+                        "In Violation", "SAMPLE-1", null, null),
+                new ViolationItem("2024-11-15", "Building Maintenance", "SAMPLE: broken stair railing",
+                        "Closed", "SAMPLE-2", "2024-12-20", null),
+                new ViolationItem("2023-03-09", "Weeds/Debris", "SAMPLE: overgrown yard",
+                        "Closed", "SAMPLE-3", "2023-04-01", null));
         return new Report("123 Example St (SAMPLE)", 3, 1, "2025-06-02", "MEDIUM",
-                summarize(3, 1, "2025-06-02"),
+                summarize(3, 1, 2, 1, "2025-06-02"),
                 categorize(items), items,
                 "SAMPLE DATA - not a real address. Used only for building the interface.");
     }
