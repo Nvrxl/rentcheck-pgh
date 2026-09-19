@@ -17,6 +17,12 @@
       <button type="button" id="theme-toggle" class="theme-toggle"></button>
       <h1>RentCheck <span>PGH</span></h1>
       <p class="tagline">Look up a Pittsburgh address before you sign a lease.</p>
+      <!-- Same nav on all three pages; aria-current marks the page you're on. -->
+      <nav class="tabs" aria-label="Sections">
+        <a href="/" aria-current="page">Check an address</a>
+        <a href="neighborhoods.html">Neighborhoods</a>
+        <a href="rentals.html">Rentals near you</a>
+      </nav>
     </header>
 
     <form id="search-form">
@@ -40,7 +46,17 @@
       <p id="sample-banner" class="sample-banner" hidden>SAMPLE DATA: made-up records for demo purposes, not a real address.</p>
 
       <!-- A heading so screen-reader users can jump here; focus moves here when results load. -->
-      <h2 id="results-heading" class="searched" tabindex="-1">Results for <b id="searched-for"></b></h2>
+      <div class="results-top">
+        <h2 id="results-heading" class="searched" tabindex="-1">Results for <b id="searched-for"></b></h2>
+        <!-- Print, or "Save as PDF" in the print window, so renters can bring the report to a viewing. -->
+        <button type="button" id="print-report" class="secondary-button">Print or save as PDF</button>
+      </div>
+      <!-- Only appears on paper: says where and when this came from. -->
+      <p id="print-stamp" class="print-only"></p>
+
+      <!-- Which neighborhood the address is in, and its rank on the Neighborhoods tab.
+           Needs the "neighborhood" field from the backend; hidden until the server sends it. -->
+      <p id="hood-line" class="hood-line" hidden></p>
 
       <div id="headline" class="card headline">
         <span class="visually-hidden">Rating:</span><span id="risk-badge" class="badge">-</span>
@@ -51,6 +67,13 @@
         <div class="card"><b id="stat-total">0</b><small>violations</small></div>
         <div class="card"><b id="stat-open">0</b><small>still unresolved</small></div>
         <div class="card"><b id="stat-recent">-</b><small>most recent</small></div>
+      </div>
+
+      <!-- Questions from the backend (templates chosen by what the records mention). Hidden if the list is empty. -->
+      <div id="questions" class="card questions" hidden>
+        <h2>Questions to ask before you sign</h2>
+        <p class="note">A starting point, not an accusation.</p>
+        <ul id="questions-list" class="checklist"></ul>
       </div>
 
       <!-- "The building": satellite view from Google Maps' free embed (no API key needed).

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rentals near you · RentCheck PGH</title>
+  <meta name="description" content="Find the Pittsburgh neighborhoods near you and search for places to rent.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 15 16 4l12 11v13H4z' fill='%23b8860b'/%3E%3Crect x='13' y='19' width='6' height='9' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <button type="button" id="theme-toggle" class="theme-toggle"></button>
+      <h1>RentCheck <span>PGH</span></h1>
+      <p class="tagline">Look up a Pittsburgh address before you sign a lease.</p>
+      <nav class="tabs" aria-label="Sections">
+        <a href="/">Check an address</a>
+        <a href="neighborhoods.html">Neighborhoods</a>
+        <a href="rentals.html" aria-current="page">Rentals near you</a>
+      </nav>
+    </header>
+
+    <h2 class="page-title">Places to rent near you</h2>
+    <p>We find the Pittsburgh neighborhoods closest to you, show how each one ranks for unresolved
+      building and fire safety cases, and link you to rental searches for that area.</p>
+
+    <button type="button" id="locate" class="primary-button">Use my location</button>
+    <p class="note">Your browser will ask first. Your location is only used to find nearby
+      neighborhoods, and our server doesn't save it.</p>
+
+    <p id="status" role="status" aria-live="polite" tabindex="-1"></p>
+
+    <section id="results" hidden>
+      <h2 id="results-heading" tabindex="-1">Neighborhoods near you</h2>
+      <p id="outside" class="card callout" hidden>You seem to be outside Pittsburgh. These are the
+        closest city neighborhoods, but they may be far from you.</p>
+      <div id="nearby" class="nearby"></div>
+
+      <div class="card callout">
+        <p><b>These are search links to other websites.</b> RentCheck doesn't list, copy or check
+          rentals. When you find a place, look up its address on the
+          <a href="/">Check an address</a> tab before you sign.</p>
+      </div>
+      <p id="api-note" class="note"></p>
+    </section>
+
+    <footer>
+      Data: City of Pittsburgh inspection records via WPRDC, 2020 Census population.
+      Not legal advice. A violation is not proof of a bad landlord.
+    </footer>
+  </main>
+  <script src="api.js"></script>
+  <script src="rentals.js"></script>
+</body>
+</html>
