@@ -84,3 +84,29 @@ external service, more risk).
 score. It must not feed the risk rating - that rating is about building safety, and mixing in
 "far from a bus" would muddy the one thing we can defend to judges.
 
+### 9. NEW IDEA: "how far from campus", filtered by how you get around
+
+Michael's follow-up: let a student pick their school and how they travel (walk / bike / bus / car),
+and filter places by how far they are from campus.
+
+**This one fits our existing data better than the transit idea.** The Neighborhoods tab already
+works out where each neighborhood is (we take the coordinates off the city's case records), so a
+"within X miles of campus" filter needs almost nothing new. The travel mode really just picks a
+sensible default radius: walking about 1 mile, biking about 3, bus or car about 6. Student can
+override it.
+
+**Where to get campus coordinates without making numbers up.** Don't hardcode lat/long from memory.
+Cleanest trick: run a campus building's street address through our own lookup - the city's records
+carry latitude and longitude - and use that. Failing that, take the coordinates off a published
+source and write down where they came from.
+
+**The honest caveat, which is also a good demo line.** We can only measure straight-line distance.
+This is Pittsburgh: hills, rivers and bridges mean a half-mile straight line can be a 25-minute
+walk, or impossible without crossing the Mon. Real walking and biking times need a routing service
+(an API key, another outside dependency, probably not worth it tonight). So label it clearly -
+"straight-line distance, not walking time" - rather than implying we know the walk.
+
+**Scope check.** Mode + radius filter on the Neighborhoods tab is small. Per-address distance to
+campus hits the same coordinate blocker as section 8: no coordinates for an address unless the city
+has a violation record there.
+

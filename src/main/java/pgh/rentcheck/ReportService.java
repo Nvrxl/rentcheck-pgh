@@ -273,12 +273,24 @@ public class ReportService {
         return sb.toString();
     }
 
-    /** Close spellings from the city's own address list. Never lets a failure break the report. */
+    /**
+     * Close spellings from the city's own address list, in two steps, because one search is not enough:
+     *   1. Search the STREET NAME the user typed. Catches a wrong house number on a real street.
+     *   2. If that finds nothing, the street itself is probably misspelled, so search the HOUSE
+     *      NUMBER alone and compare spellings against every address in the city with that number.
+     * Never lets a failure break the report.
+     */
     private List<Suggestions.Suggestion> suggestFor(String address) {
         try {
             String street = Suggestions.streetSearchTerm(address);
-            if (street == null) return List.of();
-            JsonNode rows = wprdc.searchStreet(street, Suggestions.SEARCH_LIMIT).path("result").path("records");
+            if (street != null) {
+                JsonNode rows = wprdc.searchStreet(street, Suggestions.SEARCH_LIMIT).path("result").path("records");
+                List<Suggestions.Suggestion> found = Suggestions.best(rows, address);
+                if (!found.isEmpty()) return found;
+            }
+            String houseNumber = Suggestions.houseNumberTerm(address);
+            if (houseNumber == null) return List.of();
+            JsonNode rows = wprdc.searchStreet(houseNumber, Suggestions.NUMBER_SEARCH_LIMIT).path("result").path("records");
             return Suggestions.best(rows, address);
         } catch (Exception e) {
             System.out.println("[suggestions] lookup failed for " + address + ": " + e.getMessage());

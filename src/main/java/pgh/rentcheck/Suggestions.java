@@ -29,6 +29,7 @@ public final class Suggestions {
     static final int MAX_SUGGESTIONS = 5;
     static final double MIN_SIMILARITY = 0.62;   // below this the "suggestion" is just noise
     static final int SEARCH_LIMIT = 200;
+    static final int NUMBER_SEARCH_LIMIT = 400;   // "1231" alone matches more rows than a street name
 
     public record Suggestion(String address, int similarityPercent) {}
 
@@ -120,8 +121,13 @@ public final class Suggestions {
     }
 
     /**
-     * What to search the city for when the exact address found nothing: the street name without the
-     * house number, so "1231 LAKEWUD ST" still finds every "LAKEWOOD" row to compare against.
+     * FIRST search term: the street name without the house number. This works when the street is
+     * spelled right and the house number is wrong ("1299 LAKEWOOD ST" -> we find the whole street).
+     *
+     * It does NOT work when the street itself is misspelled: searching the city for "LAKEWUD"
+     * matches nothing, because the city spells it LAKEWOOD. That is what {@link #houseNumberTerm}
+     * is for.
+     *
      * Returns null when there is nothing useful to search for.
      */
     static String streetSearchTerm(String typed) {
@@ -134,6 +140,20 @@ public final class Suggestions {
         if (to - from >= 2 && STREET_SUFFIX.contains(tokens[to - 1])) to--;
         if (to <= from) return null;
         return String.join(" ", java.util.Arrays.copyOfRange(tokens, from, to));
+    }
+
+    /**
+     * SECOND search term, used when searching by street name found nothing: the house number on its
+     * own. People usually get the number right and the street wrong, so "1231" pulls back every
+     * address in the city with that number, and we then compare spellings against those.
+     * Returns null when the user typed no house number (nothing to fall back on).
+     */
+    static String houseNumberTerm(String typed) {
+        String normalized = AddressNormalizer.normalize(typed);
+        int space = normalized.indexOf(' ');
+        if (space <= 0) return null;
+        String first = normalized.substring(0, space);
+        return first.matches("\\d{1,6}") ? first : null;
     }
 
     private static final java.util.Set<String> STREET_SUFFIX = java.util.Set.of(
