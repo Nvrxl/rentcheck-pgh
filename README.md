@@ -3,6 +3,9 @@
 Type a Pittsburgh address, get a plain-English report on its code-violation history
 before you sign a lease. Built at SteelHacks XIII (Sept 19-20, 2026).
 
+**Live: https://stingray-app-4i7yq.ondigitalocean.app**
+(Hosted on DigitalOcean App Platform. The Neighborhoods tab takes about a minute to fill in after a fresh deploy.)
+
 ## Team
 
 | Name | Email |
@@ -11,6 +14,21 @@ before you sign a lease. Built at SteelHacks XIII (Sept 19-20, 2026).
 | Connor Readinger | Readinger.connor@gmail.com (registered with SteelHacks); Cir213@pitt.edu |
 
 Both University of Pittsburgh students.
+
+## AI usage, stated up front
+
+**We used AI (Claude) to help write this code, and we have logged it.**
+Michael's log: [`AI_USAGE.md`](AI_USAGE.md). Connor's: [`AI_USAGE_CONNOR.md`](AI_USAGE_CONNOR.md).
+Each row says when, what we asked for, and what we actually kept. `CLAUDE.md` is the shared
+instruction file we gave our AI assistants.
+
+**The finished app contains no language model.** Every sentence a user reads is a template filled
+in by ordinary arithmetic. The rating, the categories, the address matching, the "did you mean"
+suggestions and the neighbourhood ranking are all classical algorithms, and we can explain any of
+them line by line. There are no calls to OpenAI, Gemini, Anthropic or anything similar in the
+running application, and no LLM libraries in `pom.xml`.
+
+Those two facts are deliberately separate: AI helped us build it, and none is in it.
 
 Data: City of Pittsburgh violations dataset via WPRDC (https://data.wprdc.org).
 **No language models are used in the app itself** (see "Hackathon rules" below).
