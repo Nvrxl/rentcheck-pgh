@@ -103,10 +103,13 @@ public class ReportService {
             System.out.println("[property] lookup failed for " + address + ": " + e.getMessage());
         }
 
+        // Nothing matched? Offer close spellings, so "no records" doesn't hide a typo.
+        List<Suggestions.Suggestion> suggestions = items.isEmpty() ? suggestFor(address) : List.of();
+
         return new Report(address, items.size(), open, mostRecent, risk,
                 summarize(items.size(), open, safety, safetyOpen, mostRecent),
                 categorize(items), items, note, Questions.forRecords(items), property,
-                neighborhoodOf(hoodVotes));
+                neighborhoodOf(hoodVotes), suggestions);
     }
 
     /**
@@ -270,6 +273,19 @@ public class ReportService {
         return sb.toString();
     }
 
+    /** Close spellings from the city's own address list. Never lets a failure break the report. */
+    private List<Suggestions.Suggestion> suggestFor(String address) {
+        try {
+            String street = Suggestions.streetSearchTerm(address);
+            if (street == null) return List.of();
+            JsonNode rows = wprdc.searchStreet(street, Suggestions.SEARCH_LIMIT).path("result").path("records");
+            return Suggestions.best(rows, address);
+        } catch (Exception e) {
+            System.out.println("[suggestions] lookup failed for " + address + ": " + e.getMessage());
+            return List.of();
+        }
+    }
+
     /**
      * Where this address sits on the neighborhood ranking. The neighborhood NAME comes from the city's
      * own column on the matched records (the most common value, since a corner address can be tagged
@@ -326,6 +342,7 @@ public class ReportService {
                 new PropertyService.PropertyFacts("SAMPLE-PARCEL", "Residential", "RESIDENTIAL", true,
                         "SINGLE FAMILY", 1921, 2.0, 3, 1, 1450, "an individual", null, "AVERAGE", 1,
                         "address", null, "SAMPLE DATA - not a real property."),
-                new ReportNeighborhood("Sample Neighborhood", 12, 2.0, 3, "per1000"));
+                new ReportNeighborhood("Sample Neighborhood", 12, 2.0, 3, "per1000"),
+                List.of());
     }
 }

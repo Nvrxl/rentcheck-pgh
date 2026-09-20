@@ -42,6 +42,7 @@ Response 200:
     "context": "The county lists this as university or college property for tax purposes, not as housing...",
     "note": "From Allegheny County assessment records..."
   },
+  "suggestions": [ { "address": "1231 LAKEWOOD ST", "similarityPercent": 87 } ],
   "neighborhood": { "name": "Central Oakland", "rank": 12, "per1000": 0.5, "openRecent": 3, "rankedBy": "per1000" },
   "questions": [
     "The city lists 1 building or fire safety case here that looks unresolved. Ask what has been done about it, when it will be fixed, and get the answer in writing.",
@@ -60,6 +61,7 @@ Response 200:
   - `ownerOccupied` is `true` or `null`, never `false`. `true` means someone claimed the homestead tax reduction, which only applies to a home the owner lives in. `null` means unknown, NOT "it is a rental".
   - Always show `note` in small text under the card.
 - `neighborhood` (NEW, this is Connor's proposed field, built exactly as proposed) says where the address sits on the Neighborhoods ranking, or `null`. `name` is the city's own neighborhood for the matched records (the most common one, since a corner address can be tagged differently on different cases). `rank`, `per1000`, `openRecent` and `rankedBy` are copied from `/api/neighborhoods`, and any of them can be `null` — while the ranking is still loading, or for a neighborhood that can't be ranked, you get the name and nulls. The report never waits for the ranking to load.
+- `suggestions` (NEW) is "did you mean?": up to 5 real addresses from the city's data that look close to what was typed, best first. **It is only ever non-empty when `totalViolations` is 0**, so show it in the empty state, above or instead of "no records found". Each entry is a normalized address you can put straight back into the search box (`?address=...`). `similarityPercent` never reaches 100, because an exact match would not be a suggestion. If it is empty, keep the existing "no records" wording.
 - `riskLevel` is one of `LOW`, `MEDIUM`, `HIGH`, `UNKNOWN`. `UNKNOWN` means no records found (NOT "safe").
 - Any field except `query` and the counts may be `null` or empty. The page must handle that.
 - `violations` is newest first. **Each entry is one city CASE**, not one row: the city stores several rows per case (inspection, re-inspection, detail), and the backend merges them. `totalViolations` counts cases.
@@ -97,6 +99,42 @@ Neighborhoods ranked by how many building and fire safety cases are **still unre
 - The list is already sorted best-to-worst by rank. Show `note` under the ranking.
 - Returns `503 {"status": "loading" | "error", "message": "..."}` while the city data is loading (about a minute after the server starts) or if the load failed. The page should show the message and retry every few seconds.
 - The data is cached in the server and refreshed every 6 hours.
+
+## GET /api/schools
+The universities we know about and the travel modes, so the page can build the "near my campus" filter.
+
+```json
+{
+  "schools": [ { "id": "pitt", "name": "University of Pittsburgh", "shortName": "Pitt",
+                 "latitude": 40.4446, "longitude": -79.9533,
+                 "housingLinks": [ { "label": "Pitt Off-Campus Housing Marketplace", "url": "https://...", "note": "..." } ] } ],
+  "travelModes": [ { "id": "walk", "label": "Walking", "defaultMiles": 1.0, "note": "About a 20 minute walk on flat ground..." } ],
+  "note": "Campus coordinates are a single point... all distances are straight-line..."
+}
+```
+
+- Currently Pitt, CMU and Duquesne. Each `housingLinks` entry is that university's OWN housing office.
+- Use `travelModes` to fill the mode picker; `defaultMiles` is the starting radius for that mode, which the student can change.
+- Show `note` near the filter. These are straight-line distances, not walking distances, and Pittsburgh's hills and rivers make that a real difference.
+
+## GET /api/neighborhoods?school=<id>&mode=<id>  (or &maxMiles=<number>)
+Same endpoint as above, filtered to neighborhoods near a campus. Without `school` the response is exactly as before, so nothing breaks.
+
+With a school, each entry gains **`distanceMiles`** and **`housingLinks`** (that school's office first), the list is sorted **closest first instead of by rank**, and the response gains:
+
+```json
+{
+  "filter": { "school": "Pitt", "schoolId": "pitt", "mode": "walk", "modeLabel": "Walking",
+              "modeNote": "About a 20 minute walk...", "maxMiles": 1.0, "matched": 4, "ofTotal": 87 },
+  "distanceNote": "Straight-line distance from the middle of Pitt, not walking distance...",
+  "neighborhoods": [ { "name": "Central Oakland", "distanceMiles": 0.06, "rank": 12, "per1000": 8.2, "...": "..." } ]
+}
+```
+
+- `mode` sets the radius from `travelModes`; `maxMiles` overrides it (0 to 50). Neither one given = every neighborhood, still sorted by distance.
+- **Neighborhoods with no coordinates are left out entirely** when a school is chosen, because we can't honestly say how far away they are. Say so if `matched` is well below `ofTotal`.
+- `rank` is still the citywide rank, so a filtered list will have gaps in the ranks. That is correct, not a bug.
+- Always show `distanceNote`. Errors: `400` for an unknown school or a bad `maxMiles`.
 
 ## GET /api/neighborhoods/near?lat=<number>&lon=<number>
 The neighborhoods closest to a spot (e.g. the browser's location), closest first, with links to rental searches on other sites.

@@ -80,6 +80,20 @@ public class WprdcClient {
     }
 
     /**
+     * All rows whose address column contains this text, used for "did you mean?" after an exact
+     * address found nothing. We ask for only the address column: we are comparing spellings here,
+     * not building a report.
+     */
+    public JsonNode searchStreet(String streetText, int limit) throws IOException, InterruptedException {
+        String q = "{\"address\":\"" + streetText.replace("\\", "\\\\").replace("\"", "\\\"") + "\"}";
+        String url = BASE + "datastore_search?resource_id=" + resourceId()
+                + "&limit=" + limit
+                + "&fields=" + URLEncoder.encode(Fields.ADDRESS, StandardCharsets.UTF_8)
+                + "&q=" + URLEncoder.encode(q, StandardCharsets.UTF_8);
+        return get(url);
+    }
+
+    /**
      * Which different values does a column contain, and how many rows each?
      * Used by /api/debug/distinct?field=status so we can see the REAL values
      * (e.g. all the possible investigation outcomes) instead of guessing.

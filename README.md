@@ -1,7 +1,16 @@
 # RentCheck PGH
 
 Type a Pittsburgh address, get a plain-English report on its code-violation history
-before you sign a lease. Built at SteelHacks XIII (Sept 19-20, 2026) by Michael and Connor.
+before you sign a lease. Built at SteelHacks XIII (Sept 19-20, 2026).
+
+## Team
+
+| Name | Email |
+|---|---|
+| Michael Plofchan | mvp88@pitt.edu |
+| Connor Readinger | Readinger.connor@gmail.com (registered with SteelHacks); Cir213@pitt.edu |
+
+Both University of Pittsburgh students.
 
 Data: City of Pittsburgh violations dataset via WPRDC (https://data.wprdc.org).
 **No language models are used in the app itself** (see "Hackathon rules" below).
@@ -17,24 +26,45 @@ mvn compile exec:java
 Then open http://localhost:7070
 
 - Click "See a sample report" to check the page works with fake data.
-- http://localhost:7070/api/debug/fields shows the real column names in the city data.
-  (The very first job is making `Fields.java` match them.)
 - Change the port with `PORT=8080 mvn compile exec:java`.
+- `mvn package` builds one runnable file, `target/rentcheck.jar`. That is what the `Dockerfile`
+  runs when the app is hosted.
+
+### What the app serves
+
+| Page | What it does |
+|---|---|
+| `/` | search an address, get the report |
+| `/neighborhoods.html` | neighborhoods ranked by unresolved building & fire safety cases |
+| `/rentals.html` | nearest neighborhoods to your location, plus rental search links |
+| `/api/report?address=` | the report as JSON (see `docs/API_CONTRACT.md`) |
+| `/api/neighborhoods`, `/api/neighborhoods/near` | the ranking data |
+| `/api/health` | is it alive, when did it start, what can it do |
+| `/api/debug/*` | developer pages we used to check real column names before writing code |
+
+The neighborhood ranking downloads city data in the background when the server starts, so those
+pages answer "still loading" for about a minute after a fresh start.
 
 ## Where things are
 
 | Path | What it is | Owner |
 |---|---|---|
 | `src/main/java/pgh/rentcheck/App.java` | web server + routes | Michael |
-| `.../WprdcClient.java` | talks to the city data API | Michael |
+| `.../WprdcClient.java` | talks to the city and county data APIs | Michael |
 | `.../ReportService.java` | the logic: matching, scoring, summaries | Michael |
-| `.../Fields.java` | city column names | Michael |
+| `.../NeighborhoodService.java` | neighborhood ranking and "near me" | Michael |
+| `.../PropertyService.java` | county building facts (type, year built, owner type) | Michael |
+| `.../Questions.java` | "questions to ask before you sign", from templates | Michael |
+| `.../Categories.java`, `.../AddressNormalizer.java`, `.../Fields.java` | buckets, address matching, column names | Michael |
 | `.../Models.java` | JSON shapes sent to the page (the contract) | **both** |
 | `src/main/resources/public/*` | the web page (HTML/CSS/JS) | Connor |
+| `Dockerfile` | how a hosting service builds and runs the app | Michael |
 | `docs/TASKS.md` | who does what, in what order | both |
+| `docs/HOW_WE_SCORE.md` | the rating rules in plain English | both |
 | `docs/API_CONTRACT.md` | what the backend promises the frontend | both |
 | `CLAUDE.md` | instructions for our AI assistants | both |
-| `AI_USAGE.md` | log of AI help (we must credit it) | both |
+| `AI_USAGE.md` | log of AI help, Michael's | Michael |
+| `AI_USAGE_CONNOR.md` | log of AI help, Connor's | Connor |
 
 ## Hackathon rules we are following
 

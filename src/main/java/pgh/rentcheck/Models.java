@@ -23,7 +23,8 @@ public final class Models {
             String note,              // extra warning shown in the UI (e.g. "SAMPLE DATA")
             List<String> questions,   // "questions to ask before you sign", chosen from templates
             PropertyService.PropertyFacts property,  // what the COUNTY knows about the building, or null
-            ReportNeighborhood neighborhood  // where this address sits on the neighborhood ranking, or null
+            ReportNeighborhood neighborhood,  // where this address sits on the neighborhood ranking, or null
+            List<Suggestions.Suggestion> suggestions  // "did you mean?" - only when nothing was found
     ) {}
 
     /**

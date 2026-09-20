@@ -18,6 +18,8 @@ import java.util.Map;
  *   /api/report/sample   -> fake report, so the page can be built without real data
  *   /api/debug/fields    -> shows the real column names in the city dataset
  *   /api/neighborhoods   -> neighborhoods ranked by unresolved building/fire safety cases
+ *                           (?school=pitt&mode=walk filters to what is near a campus)
+ *   /api/schools         -> the universities we know about + travel modes
  *   /api/neighborhoods/near?lat=&lon= -> the neighborhoods closest to a spot, with rental search links
  */
 public class App {
@@ -93,8 +95,88 @@ public class App {
                     + ReportService.RECENT_YEARS + " years");
             out.put("rowsScanned", snap.rowsScanned());
             out.put("truncated", snap.truncated());
-            out.put("neighborhoods", snap.hoods());
+            // Optional: ?school=pitt&mode=walk (or &maxMiles=2) filters to what is near a campus.
+            Schools.School school = Schools.byId(ctx.queryParam("school"));
+            Schools.TravelMode mode = Schools.modeById(ctx.queryParam("mode"));
+            Double maxMiles = null;
+            String milesParam = ctx.queryParam("maxMiles");
+            if (milesParam != null && !milesParam.isBlank()) {
+                try {
+                    maxMiles = Double.parseDouble(milesParam);
+                } catch (NumberFormatException e) {
+                    ctx.status(400).json(Map.of("error", "maxMiles must be a number"));
+                    return;
+                }
+                if (maxMiles <= 0 || maxMiles > 50) {
+                    ctx.status(400).json(Map.of("error", "maxMiles must be between 0 and 50"));
+                    return;
+                }
+            } else if (mode != null) {
+                maxMiles = mode.defaultMiles();
+            }
+
+            if (school == null) {
+                if (ctx.queryParam("school") != null && !ctx.queryParam("school").isBlank()) {
+                    ctx.status(400).json(Map.of("error", "Unknown school. See /api/schools."));
+                    return;
+                }
+                out.put("neighborhoods", snap.hoods());
+            } else {
+                List<NeighborhoodService.WithDistance> near = snap.withinMiles(
+                        school.latitude(), school.longitude(), maxMiles);
+                List<Map<String, Object>> rows = new java.util.ArrayList<>();
+                for (NeighborhoodService.WithDistance w : near) {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("name", w.hood().name());
+                    m.put("openRecent", w.hood().openRecent());
+                    m.put("openOlder", w.hood().openOlder());
+                    m.put("addresses", w.hood().addresses());
+                    m.put("population", w.hood().population());
+                    m.put("per1000", w.hood().per1000());
+                    m.put("rank", w.hood().rank());
+                    m.put("rateNote", w.hood().rateNote());
+                    m.put("distanceMiles", w.distanceMiles());
+                    m.put("housingLinks", Schools.housingLinks(w.hood().name(), school));
+                    rows.add(m);
+                }
+                Map<String, Object> filter = new LinkedHashMap<>();
+                filter.put("school", school.shortName());
+                filter.put("schoolId", school.id());
+                filter.put("mode", mode == null ? null : mode.id());
+                filter.put("modeLabel", mode == null ? null : mode.label());
+                filter.put("modeNote", mode == null ? null : mode.note());
+                filter.put("maxMiles", maxMiles);
+                filter.put("matched", rows.size());
+                filter.put("ofTotal", snap.hoods().size());
+                out.put("filter", filter);
+                out.put("neighborhoods", rows);
+                out.put("distanceNote", "Straight-line distance from the middle of " + school.shortName()
+                        + ", not walking distance. Pittsburgh's hills, rivers and bridges make the real "
+                        + "journey longer, sometimes much longer.");
+            }
             out.put("note", NEIGHBORHOOD_NOTE);
+            ctx.json(out);
+        });
+
+        // The universities we know about, plus the travel modes, so the page can build its filter.
+        app.get("/api/schools", ctx -> {
+            List<Map<String, Object>> schools = new java.util.ArrayList<>();
+            for (Schools.School s : Schools.all()) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id", s.id());
+                m.put("name", s.name());
+                m.put("shortName", s.shortName());
+                m.put("latitude", s.latitude());
+                m.put("longitude", s.longitude());
+                m.put("housingLinks", s.housingLinks());
+                schools.add(m);
+            }
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("schools", schools);
+            out.put("travelModes", Schools.modes());
+            out.put("note", "Campus coordinates are a single point for a campus that covers many blocks, "
+                    + "and all distances are straight-line, not walking distance. Pittsburgh's hills, rivers "
+                    + "and bridges mean the real journey is often much longer.");
             ctx.json(out);
         });
 

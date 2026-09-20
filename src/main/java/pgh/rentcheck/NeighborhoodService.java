@@ -33,6 +33,7 @@ public class NeighborhoodService {
     static final int MIN_POPULATION_FOR_RATE = 1000; // tiny neighborhoods make wild per-1,000 numbers
     static final int NEARBY_COUNT = 6;
     static final double OUTSIDE_CITY_KM = 5.0;
+    static final double KM_TO_MILES = 0.621371;
 
     private final WprdcClient wprdc;
     private volatile Snapshot snapshot;
@@ -108,6 +109,9 @@ public class NeighborhoodService {
 
     public record Nearby(String name, double distanceKm, Integer rank, int openRecent, Double per1000) {}
 
+    /** A neighborhood plus how far it is from a chosen campus (straight line). */
+    public record WithDistance(Hood hood, double distanceMiles) {}
+
     /** Immutable result of one download. Points are parallel arrays so "nearest" is a cheap loop. */
     public record Snapshot(LocalDate asOf, List<Hood> hoods, String rankedBy, int rowsScanned, boolean truncated,
                            double[] lat, double[] lon, int[] hoodIndex) {
@@ -128,6 +132,29 @@ public class NeighborhoodService {
             }
             out.sort(Comparator.comparingDouble(Nearby::distanceKm));
             return out.size() > count ? out.subList(0, count) : out;
+        }
+
+        /**
+         * Every neighborhood with its straight-line distance in miles from a point (a campus),
+         * closest first, optionally cut off at maxMiles. Neighborhoods we have no coordinates for
+         * are left out, because we cannot honestly say how far away they are.
+         */
+        public List<WithDistance> withinMiles(double lat0, double lon0, Double maxMiles) {
+            double[] best = new double[hoods.size()];
+            java.util.Arrays.fill(best, Double.MAX_VALUE);
+            for (int i = 0; i < lat.length; i++) {
+                double d = distanceKm(lat0, lon0, lat[i], lon[i]);
+                if (d < best[hoodIndex[i]]) best[hoodIndex[i]] = d;
+            }
+            List<WithDistance> out = new ArrayList<>();
+            for (int h = 0; h < best.length; h++) {
+                if (best[h] == Double.MAX_VALUE) continue;
+                double miles = Math.round(best[h] * KM_TO_MILES * 100) / 100.0;
+                if (maxMiles != null && miles > maxMiles) continue;
+                out.add(new WithDistance(hoods.get(h), miles));
+            }
+            out.sort(Comparator.comparingDouble(WithDistance::distanceMiles));
+            return out;
         }
     }
 
@@ -283,24 +310,12 @@ public class NeighborhoodService {
     public record Link(String label, String url, String note) {}
 
     /**
-     * Plain search links to other websites. We do NOT list, copy or verify any rentals ourselves:
-     * live listings belong to those sites. The Pitt marketplace and office are official student resources.
+     * Plain search links to other websites, including the universities' own housing offices.
+     * We do NOT list, copy or verify any rentals ourselves: live listings belong to those sites.
+     * See Schools.java for the actual list.
      */
     public static List<Link> rentalLinks(String neighborhood) {
-        String place = neighborhood + " Pittsburgh PA";
-        String q = URLEncoder.encode(place, StandardCharsets.UTF_8);
-        List<Link> links = new ArrayList<>();
-        links.add(new Link("Pitt Off-Campus Housing Marketplace", "https://listings.ocl.pitt.edu/listing",
-                "Listings for University of Pittsburgh students"));
-        links.add(new Link("Pitt Off-Campus Student Services", "https://www.ocl.pitt.edu/",
-                "Advice on renting and leases"));
-        links.add(new Link("Search Google for rentals in " + neighborhood,
-                "https://www.google.com/search?q=" + URLEncoder.encode("apartments for rent " + place, StandardCharsets.UTF_8), null));
-        links.add(new Link("Craigslist Pittsburgh apartments",
-                "https://pittsburgh.craigslist.org/search/apa?query=" + URLEncoder.encode(neighborhood, StandardCharsets.UTF_8),
-                "Be careful of scams: never pay before seeing a place"));
-        links.add(new Link("Zillow rentals in Pittsburgh", "https://www.zillow.com/pittsburgh-pa/rentals/", null));
-        return links;
+        return Schools.housingLinks(neighborhood, null);
     }
 
     // ---------------------------------------------------------------- small helpers
