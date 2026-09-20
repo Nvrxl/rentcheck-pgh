@@ -40,7 +40,9 @@
    z-index: -1 keeps it behind every element; pointer-events: none means it can't block clicks. */
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background: url("bridge-animated-night.svg") no-repeat center bottom 8vh / min(1400px, 140vw) auto;
+  /* The picture is 4x wider than the bridge (the road runs on past both ends), so it's sized by HEIGHT:
+     the bridge part stays the same size as before, centered, and the road reaches both screen edges. */
+  background: url("bridge-animated-night.svg") no-repeat center bottom 8vh / auto min(513px, 51.3vw);
   opacity: .3;
 }
 /* Sun and birds in the top-right corner: a second fixed layer, also behind everything. */
