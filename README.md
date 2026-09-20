@@ -3,6 +3,9 @@
 Type a Pittsburgh address, get a plain-English report on its code-violation history
 before you sign a lease. Built at SteelHacks XIII (Sept 19-20, 2026).
 
+**Live: https://stingray-app-4i7yq.ondigitalocean.app**
+(Hosted on DigitalOcean App Platform. The Neighborhoods tab takes about a minute to fill in after a fresh deploy.)
+
 ## Team
 
 | Name | Email |

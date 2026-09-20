@@ -6,6 +6,13 @@ something the app does not do.**
 
 ---
 
+## Live demo
+
+https://stingray-app-4i7yq.ondigitalocean.app
+
+Running on DigitalOcean App Platform, built from the Dockerfile in this repo.
+Give the Neighborhoods tab a minute after a cold start - it downloads the city data in the background.
+
 ## Tagline
 
 Look up any Pittsburgh address and find out what the city already knows about it - before you sign.
