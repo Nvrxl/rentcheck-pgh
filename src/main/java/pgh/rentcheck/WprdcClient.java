@@ -284,7 +284,7 @@ public class WprdcClient {
      * against it. Lists its resources and shows the column names plus two example rows of the first
      * queryable one, so we check real column names instead of guessing.
      */
-    public JsonNode peek(String packageId) throws IOException, InterruptedException {
+    public JsonNode peek(String packageId, String resourceId) throws IOException, InterruptedException {
         if (packageId == null || !packageId.matches("[a-z0-9-]{1,80}")) {
             throw new IOException("package must be a WPRDC dataset id like property-assessments");
         }
@@ -302,8 +302,12 @@ public class WprdcClient {
         com.fasterxml.jackson.databind.node.ObjectNode out = mapper.createObjectNode();
         out.set("resources", list);
         out.put("firstQueryableResource", chosen);
-        if (chosen != null) {
-            out.set("sample", get(BASE + "datastore_search?resource_id=" + chosen + "&limit=2").path("result"));
+        // A dataset often has several resources and the interesting one is rarely the first
+        // (e.g. the geocoded facilities list sits behind the inspections list), so allow a choice.
+        String use = resourceId != null && resourceId.matches("[0-9a-fA-F-]{36}") ? resourceId : chosen;
+        out.put("sampledResource", use);
+        if (use != null) {
+            out.set("sample", get(BASE + "datastore_search?resource_id=" + use + "&limit=2").path("result"));
         }
         return out;
     }

@@ -81,9 +81,17 @@ Run: `mvn compile exec:java` -> http://localhost:7070
   safety. So the risk rating is driven by building & fire safety problems only (`Categories.java`).
 - Statuses that mean unresolved: In Violation, In Court, Clean & Lien, Appealed.
 - Neighborhood ranking (`NeighborhoodService.java`) ranks unresolved building/fire safety cases from the last
-  3 years per 1,000 residents (2020 Census table from WPRDC). It is about housing conditions, NOT crime: the city's
-  open police-blotter data stopped updating in Nov 2023 and its replacement is a dashboard with no data download,
-  so never build or promise a "live crime ranking". Case counts include commercial and mixed-use buildings.
+  3 years per 1,000 residents (2020 Census table from WPRDC). It is about housing conditions, NOT crime. Case
+  counts include commercial and mixed-use buildings.
+- Crime data, corrected Sat Sep 19 2026 (an earlier note here was too strong): the old police blotter stopped in
+  Nov 2023, but there IS a successor, **Monthly Criminal Activity** (`monthly-criminal-activity-dashboard`,
+  resource `bd41992a-987a-4cca-8798-fbe1cd946b07`) - incident-level NIBRS, Jan 2024 to Apr 2026, monthly. Three
+  CHECKED AND REJECTED the same evening: the CKAN datastore IS active for it, but what was ingested is an Excel
+  PIVOT TABLE, not the incidents - 42 rows with headers like "Row Labels", "Column Labels", "Grand Total" and
+  two unnamed columns. The real incident data must be on another sheet that CKAN never ingested, so reaching it
+  means downloading the workbook and adding Apache POI. Combined with a ~5 month lag and locations rounded to the
+  nearest 100 block, it is not worth it. Do not re-investigate without new information. There is no live crime
+  feed, and nothing crime-related may ever feed the risk rating, which is about building safety only.
 - The county's open property-assessment data excludes owner names (county ordinance), so "owner matching" is not possible.
 - 311: the OLD archive (`data.wprdc.org/dataset/311-data`) stopped in Feb 2025, but the city moved to a
   new system and there IS a current dataset, **Pittsburgh 311 Data** (`pittsburgh-311-data`, resource

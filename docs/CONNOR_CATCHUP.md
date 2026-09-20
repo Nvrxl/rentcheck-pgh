@@ -136,3 +136,20 @@ guess where they were.
 
 Shapes in `docs/API_CONTRACT.md`.
 
+### 14. Crime data: checked again, still not usable (closed)
+
+Michael pushed back on the earlier "crime data is dead" note, correctly - it was too strong. There IS
+a successor dataset, **Monthly Criminal Activity** (WPRDC), incident-level NIBRS, Jan 2024 to Apr 2026.
+
+We queried it. The CKAN datastore is active, but the ingested content is an Excel **pivot table**, not
+incidents: 42 rows, headers reading "Row Labels", "Column Labels", "Grand Total", plus two unnamed
+columns. The real data is presumably on another sheet of the workbook that was never ingested, so we
+would have to download and parse XLSX (a new Java library) to get at ~5-month-old, block-level data.
+Not worth it before the freeze. **Closed unless someone finds a different source.**
+
+Worth keeping for the pitch though: of the public datasets we checked tonight - police blotter, 311
+archive, fire incidents, county grocery list, crime dashboard - three had quietly stopped updating,
+one became a dashboard, and one publishes a pivot table where a dataset should be. The reason renters
+cannot easily check a building is not that the information does not exist; it is that it is scattered
+across sources that decay silently. RentCheck stitches five live ones together and puts a date on each.
+

@@ -29,8 +29,15 @@ public final class Models {
             Permits.PermitHistory permits,            // work permitted here since June 2019, or null
             String permitsNote,                       // shown when there are no permits at all
             Requests311.Summary requests311,          // 311 requests in this neighbourhood, or null
-            List<SourceAsOf> dataAsOf                 // where every number came from, and how fresh it is
+            List<SourceAsOf> dataAsOf,                // where every number came from, and how fresh it is
+            Location location                         // where the building is, for the map, or null
     ) {}
+
+    /**
+     * Coordinates for the searched address. Null when no dataset we hold has a location for it.
+     * `source` says which dataset it came from, because we never invent a position.
+     */
+    public record Location(double latitude, double longitude, String source, String note) {}
 
     /** One data source behind the report, so the page can show "as of" dates honestly. */
     public record SourceAsOf(String source, String covers, String asOf, String note) {}

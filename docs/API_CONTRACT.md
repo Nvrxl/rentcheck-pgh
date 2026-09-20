@@ -42,6 +42,8 @@ Response 200:
     "context": "The county lists this as university or college property for tax purposes, not as housing...",
     "note": "From Allegheny County assessment records..."
   },
+  "location": { "latitude": 40.4406, "longitude": -79.9959, "source": "city violation records",
+                "note": "Position comes from city violation records, not from the address itself..." },
   "requests311": {
     "neighborhood": "Central Oakland", "total": 300, "recent": 214, "open": 37, "asOf": "2026-09-19",
     "topTypes": [ { "type": "Potholes", "count": 41 } ],
@@ -85,6 +87,7 @@ Response 200:
 - **`permitsNote`** (NEW) is set *instead of* `permits` when there are none, and is already worded carefully (small repairs need no permit, plumbing permits are issued by the county). Show it as-is; do not write your own version, and do not present "no permits" as proof of neglect.
 - **`requests311`** (NEW) is what residents reported to 311 in this address's **neighbourhood**, or `null`. Show it as "Around this address" and keep the framing: it describes the street, not the building. Always show `note`. `open` can be `null` (we only report it when the dataset actually has a status column). Source is the CURRENT 311 system, March 2025 onwards, published four times a day.
 - **`dataAsOf`** (NEW) lists every dataset behind the report with what it covers and the newest record we saw, so the page can show honest "as of" dates. `asOf` can be `null`. Put this at the foot of the report. Half the public datasets in this city have quietly stopped updating, so being explicit here is a feature, not boilerplate.
+- **`location`** (NEW) is the building's coordinates for the map, or `null`. It comes from whichever dataset we hold that has a position for this address (violations first, then permits), and `source` says which. **We never invent a position: no data, no pin** - so an address with no records anywhere has `location: null` and the map must simply not appear. Coordinates outside greater Pittsburgh, and the 0/0 the city uses for "unknown", are rejected. Show `note`: a position from a case record can refer to the block rather than the building.
 - `riskLevel` is one of `LOW`, `MEDIUM`, `HIGH`, `UNKNOWN`. `UNKNOWN` means no records found (NOT "safe").
 - Any field except `query` and the counts may be `null` or empty. The page must handle that.
 - `violations` is newest first. **Each entry is one city CASE**, not one row: the city stores several rows per case (inspection, re-inspection, detail), and the backend merges them. `totalViolations` counts cases.

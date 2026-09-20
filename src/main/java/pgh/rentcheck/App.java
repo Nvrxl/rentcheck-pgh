@@ -288,10 +288,10 @@ public class App {
             ctx.json(out);
         });
 
-        // e.g. /api/debug/peek?package=property-assessments -> resources + real column names + 2 example rows
+        // e.g. /api/debug/peek?package=property-assessments[&resource=<id>] -> resources + real column names + 2 rows
         app.get("/api/debug/peek", ctx -> {
             String pkg = ctx.queryParam("package");
-            ctx.json(wprdc.peek(pkg == null ? "" : pkg));
+            ctx.json(wprdc.peek(pkg == null ? "" : pkg, ctx.queryParam("resource")));
         });
 
         // e.g. /api/debug/distinct?field=investigation_outcome  -> every real value + how common

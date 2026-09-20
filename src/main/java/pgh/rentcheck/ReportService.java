@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import pgh.rentcheck.Models.CategoryCount;
 import pgh.rentcheck.Models.Report;
 import pgh.rentcheck.Models.ReportNeighborhood;
+import pgh.rentcheck.Models.Location;
 import pgh.rentcheck.Models.SourceAsOf;
 import pgh.rentcheck.Models.ViolationItem;
 
@@ -50,6 +51,7 @@ public class ReportService {
         // Step 1: keep only rows for this exact address, grouped by case number.
         Map<String, List<JsonNode>> byCase = new LinkedHashMap<>();
         Map<String, Integer> hoodVotes = new LinkedHashMap<>();   // which neighborhood the city put this address in
+        Location location = null;   // first real position we see, from whichever dataset has one
         int rowsForAddress = 0;
         for (JsonNode r : records) {
             // The search can return look-alikes (e.g. "1231 LAKEWOOD" vs "12310 LAKEWOOD"): double check.
@@ -57,6 +59,8 @@ public class ReportService {
             rowsForAddress++;
             String hood = text(r, Fields.NEIGHBORHOOD);
             if (!isBlank(hood)) hoodVotes.merge(hood.trim(), 1, Integer::sum);
+            if (location == null) location = locationFrom(r, Fields.LATITUDE, Fields.LONGITUDE,
+                    "city violation records");
             String caseId = text(r, Fields.CASEFILE);
             if (isBlank(caseId)) caseId = "row-" + r.path("_id").asText();
             byCase.computeIfAbsent(caseId, k -> new ArrayList<>()).add(r);
@@ -120,8 +124,15 @@ public class ReportService {
         }
         Permits.PermitHistory permits = null;
         try {
-            permits = Permits.from(wprdc.permits(parcelId, normalized).path("result").path("records"),
-                    items.size(), LocalDate.now());
+            // Fetch once and use the rows twice: permit history, and (if we still have no position)
+            // the building's coordinates. Every extra call to the city costs the user a wait.
+            JsonNode permitRows = wprdc.permits(parcelId, normalized).path("result").path("records");
+            permits = Permits.from(permitRows, items.size(), LocalDate.now());
+            // A clean address has no violations and so no position yet; permits carry one.
+            // We never invent a position: no data, no pin.
+            if (location == null) {
+                location = firstLocation(permitRows, "latitude", "longitude", "city building permits");
+            }
         } catch (Exception e) {
             System.out.println("[permits] lookup failed for " + address + ": " + e.getMessage());
         }
@@ -151,7 +162,7 @@ public class ReportService {
                 summarize(items.size(), open, safety, safetyOpen, mostRecent),
                 categorize(items), items, note, Questions.forRecords(items), property,
                 hood, suggestions, condemned, permits, permitsNote, requests311,
-                sources(mostRecent, permits, requests311));
+                sources(mostRecent, permits, requests311), location);
     }
 
     /**
@@ -399,7 +410,8 @@ public class ReportService {
                 new ReportNeighborhood("Sample Neighborhood", 12, 2.0, 3, "per1000"),
                 List.of(), null,
                 Permits.from(sampleParcelRows(), 3, LocalDate.now()), null, null,
-                sources("2025-06-02", Permits.from(sampleParcelRows(), 3, LocalDate.now()), null));
+                sources("2025-06-02", Permits.from(sampleParcelRows(), 3, LocalDate.now()), null),
+                new Location(40.4406, -79.9959, "SAMPLE DATA", "Not a real location."));
     }
 
     /**
@@ -422,6 +434,37 @@ public class ReportService {
                 requests311 == null ? null : requests311.asOf(),
                 "The current 311 system. Published four times a day. Some locations are withheld for privacy."));
         return out;
+    }
+
+    /** Reads a position off one row, or null. Rejects 0/0, which the city uses to mean "unknown". */
+    private static Location locationFrom(JsonNode row, String latField, String lonField, String source) {
+        double lat = num(row, latField), lon = num(row, lonField);
+        if (Double.isNaN(lat) || Double.isNaN(lon) || lat == 0 || lon == 0) return null;
+        // Sanity check: anything outside greater Pittsburgh is a data error, not a building.
+        if (lat < 40.2 || lat > 40.6 || lon < -80.2 || lon > -79.7) return null;
+        return new Location(lat, lon, source,
+                "Position comes from " + source + ", not from the address itself, so it can be a few "
+                        + "metres off or refer to the block rather than the building.");
+    }
+
+    /** The first usable position in a list of rows. */
+    private static Location firstLocation(JsonNode rows, String latField, String lonField, String source) {
+        for (JsonNode row : rows) {
+            Location l = locationFrom(row, latField, lonField, source);
+            if (l != null) return l;
+        }
+        return null;
+    }
+
+    private static double num(JsonNode row, String field) {
+        JsonNode n = row.path(field);
+        if (n.isMissingNode() || n.isNull()) return Double.NaN;
+        if (n.isNumber()) return n.asDouble();
+        try {
+            return Double.parseDouble(n.asText().trim());
+        } catch (NumberFormatException e) {
+            return Double.NaN;
+        }
     }
 
     /** Two made-up permits so the sample report shows the "work done here" card. */
