@@ -51,6 +51,14 @@
         <!-- Print, or "Save as PDF" in the print window, so renters can bring the report to a viewing. -->
         <button type="button" id="print-report" class="secondary-button">Print or save as PDF</button>
       </div>
+      <!-- The most serious thing the report can say. Almost always hidden (condemned is null).
+           Owner names exist in the source data; we deliberately never show them. -->
+      <div id="condemned" class="card condemned" role="alert" hidden>
+        <h2>The city has declared this property unfit to live in</h2>
+        <p id="condemned-warning" class="condemned-warning"></p>
+        <p id="condemned-note" class="note"></p>
+      </div>
+
       <!-- Only appears on paper: says where and when this came from. -->
       <p id="print-stamp" class="print-only"></p>
 
@@ -107,6 +115,10 @@
       <!-- Shown instead of the lists when nothing matched. Must never read as "this building is safe". -->
       <div id="no-records" class="card no-records" hidden>
         <h2>No violation records found. That does not mean the building is safe.</h2>
+        <div id="suggestions" hidden>
+          <p><b>Did you mean one of these?</b> These addresses are in the city's records and look close to what you typed.</p>
+          <ul id="suggestions-list" class="suggestions"></ul>
+        </div>
         <p>Some reasons nothing showed up:</p>
         <ul>
           <li>The city may write the address differently. Try just the number and street
@@ -134,6 +146,32 @@
       </div>
       </div>
 
+      <!-- Building permits: the counterweight to violations (what was fixed properly, with a permit). -->
+      <div id="permits" class="card permits" hidden>
+        <h2>Building permits</h2>
+        <p id="permits-summary"></p>
+        <div class="table-wrap" id="permits-table">
+          <table role="table">
+            <caption class="visually-hidden">Building permits for this address, newest first</caption>
+            <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Date</th><th role="columnheader" scope="col">Work</th><th role="columnheader" scope="col">Description</th><th role="columnheader" scope="col">Value</th><th role="columnheader" scope="col">Status</th></tr></thead>
+            <tbody id="permits-items" role="rowgroup"></tbody>
+          </table>
+        </div>
+        <p id="permits-note" class="note"></p>
+      </div>
+
+      <!-- 311 requests in the NEIGHBORHOOD: about the street, not this building. -->
+      <div id="around" class="card around" hidden>
+        <h2>Around this address</h2>
+        <p id="around-summary"></p>
+        <ul id="around-types" class="chips"></ul>
+        <details id="around-details">
+          <summary>Most recent requests</summary>
+          <ul id="around-items" class="around-items"></ul>
+        </details>
+        <p id="around-note" class="note"></p>
+      </div>
+
       <div id="also-check" class="card also-check" hidden>
         <h2>Also check</h2>
         <ul>
@@ -149,6 +187,13 @@
         <h2>Questions to ask before you sign</h2>
         <p class="note">A starting point, not an accusation.</p>
         <ul id="questions-list" class="checklist"></ul>
+      </div>
+
+      <!-- Where every number came from and how fresh it is. Several city datasets have quietly
+           stopped updating, so showing dates is a feature. -->
+      <div id="sources" class="sources" hidden>
+        <h2>Where this data comes from</h2>
+        <ul id="sources-list"></ul>
       </div>
     </section>
 

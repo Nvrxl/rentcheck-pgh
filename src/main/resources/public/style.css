@@ -181,6 +181,26 @@ tbody tr:last-child td { border-bottom: 0; }
 .facts dt { color: var(--muted); font-weight: 600; }
 .facts dd { margin: 0; }
 @media (max-width: 520px) { .facts { grid-template-columns: 1fr; gap: 0; } .facts dd { margin-bottom: 8px; } }
+/* Condemned: the only red box on the page, so it can't be missed. */
+.condemned { border: 2px solid var(--high); border-left-width: 6px; margin-bottom: 12px; }
+.condemned h2 { margin: 0 0 6px; color: var(--danger-text); }
+.condemned-warning { font-weight: 600; margin: 0 0 6px; }
+.suggestions { padding-left: 20px; }
+.suggestions li { margin: 4px 0; }
+.suggestions a { font-weight: 600; }
+.muted { color: var(--muted); }
+.permits, .around { margin-top: 20px; }
+.permits h2, .around h2 { margin-top: 0; }
+.chips { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.chips li { background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; font-size: .85rem; }
+.around summary { cursor: pointer; font-weight: 600; margin: 8px 0; }
+.around-items { padding-left: 20px; margin: 0; font-size: .9rem; }
+.sources { margin-top: 24px; font-size: .85rem; color: var(--muted); }
+.sources h2 { font-size: .95rem; margin: 0 0 6px; color: var(--text); }
+.sources ul { padding-left: 18px; margin: 0; }
+.sources li { margin: 4px 0; }
+.sources b { color: var(--text); }
+.source-note { display: block; }
 .walk { margin-top: 16px; }
 .walk h2 { margin: 0 0 4px; }
 .school-select {
@@ -231,6 +251,18 @@ tbody tr:last-child td { border-bottom: 0; }
   width: 100%; max-width: 320px; padding: 10px 12px; font-size: 16px; border-radius: 8px;
   border: 1px solid var(--line); background: var(--card); color: var(--text); margin-bottom: 12px;
 }
+.campus { margin: 12px 0; }
+.campus h3 { margin: 0 0 8px; }
+.campus-controls { display: flex; flex-wrap: wrap; gap: 12px; }
+.campus-controls label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: .9rem; }
+.campus-controls select, .campus-controls input {
+  padding: 8px 10px; font-size: 16px; border-radius: 8px; min-width: 150px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text);
+}
+.campus-controls input { width: 110px; min-width: 0; }
+.campus-controls :disabled { opacity: .5; }
+.campus-links { margin: 8px 0 0; }
+.filter-summary { font-weight: 600; margin: 12px 0 4px; }
 .rank-table td:first-child { font-weight: 700; font-variant-numeric: tabular-nums; }
 .rank-table td { font-variant-numeric: tabular-nums; }
 .unranked { padding-left: 20px; }

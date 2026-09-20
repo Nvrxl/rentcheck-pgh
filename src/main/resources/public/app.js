@@ -169,6 +169,11 @@ function render(r) {
   renderAlsoCheck(searchedAddress);
   renderPlace(searchedAddress);
   renderProperty(r.property);
+  renderCondemned(r.condemned);
+  renderSuggestions(r.suggestions);
+  renderPermits(r.permits, r.permitsNote);
+  renderAround(r.requests311);
+  renderSources(r.dataAsOf);
   renderWalk(searchedAddress);
   renderQuestions(r.questions);
   renderNeighborhood(r.neighborhood);
@@ -395,4 +400,105 @@ function renderWalk(address) {
   link.appendChild(Object.assign(document.createElement("span"), { className: "visually-hidden", textContent: " (opens in a new tab)" }));
   result.replaceChildren(link);
   result.hidden = false;
+}
+
+// ---------------------------------------------------------------------------
+// Newer report fields (see docs/API_CONTRACT.md). Every one of them can be null, so each
+// function hides its section when there's nothing to show. Text always goes in with textContent.
+// ---------------------------------------------------------------------------
+
+// Small helper: make an element with text.
+function make(tag, text, className) {
+  const e = document.createElement(tag);
+  if (className) e.className = className;
+  if (text !== undefined && text !== null) e.textContent = text;
+  return e;
+}
+
+// "Condemned": the city says the property is unfit for occupancy. Shown above everything else.
+// We show the city's warning and note only; the source data has owner names and we never use them.
+function renderCondemned(c) {
+  const box = document.getElementById("condemned");
+  box.hidden = !(c && c.warning);
+  if (box.hidden) return;
+  document.getElementById("condemned-warning").textContent = c.warning;
+  document.getElementById("condemned-note").textContent = c.note || "";
+}
+
+// "Did you mean?": real addresses from the city's data that look close to what was typed.
+// The backend only sends these when nothing matched. Clicking one runs a new search.
+function renderSuggestions(list) {
+  const items = Array.isArray(list) ? list.filter((x) => x && x.address) : [];
+  document.getElementById("suggestions").hidden = items.length === 0;
+  document.getElementById("suggestions-list").replaceChildren(...items.map((x) => {
+    const li = make("li");
+    const a = make("a", x.address);
+    a.href = `?address=${encodeURIComponent(x.address)}`;
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      input.value = x.address;
+      search(x.address);
+    });
+    li.appendChild(a);
+    if (typeof x.similarityPercent === "number") li.appendChild(make("small", ` ${x.similarityPercent}% similar`, "muted"));
+    return li;
+  }));
+}
+
+// Building permits since June 2019. When there are none, the backend sends permitsNote instead,
+// already worded carefully: we show it exactly as written (no permits is NOT proof of neglect).
+function renderPermits(p, permitsNote) {
+  const box = document.getElementById("permits");
+  const items = p && Array.isArray(p.items) ? p.items : [];
+  box.hidden = !p && !permitsNote;
+  if (box.hidden) return;
+
+  document.getElementById("permits-summary").textContent = p ? (p.summary || "") : permitsNote;
+  document.getElementById("permits-table").hidden = items.length === 0;
+  document.getElementById("permits-items").replaceChildren(...items.map((it) => {
+    const tr = make("tr");
+    tr.setAttribute("role", "row");
+    const work = [it.type, it.workType].filter(Boolean).join(": ");
+    const value = typeof it.projectValue === "number" ? `$${it.projectValue.toLocaleString("en-US")}` : null;
+    for (const [label, text] of [["Date", niceDate(it.date) || it.date], ["Work", work], ["Description", it.description],
+                                 ["Value", value], ["Status", it.status]]) {
+      const td = make("td", text || "-");
+      td.setAttribute("role", "cell");
+      td.dataset.label = label;
+      tr.appendChild(td);
+    }
+    return tr;
+  }));
+  document.getElementById("permits-note").textContent = p ? (p.note || "") : "";
+}
+
+// 311 requests in the NEIGHBORHOOD. About the street, not the building, so the heading says
+// "Around this address" and the backend's note is always shown.
+function renderAround(r) {
+  const box = document.getElementById("around");
+  box.hidden = !r;
+  if (!r) return;
+  document.getElementById("around-summary").textContent = r.summary || "";
+  const types = Array.isArray(r.topTypes) ? r.topTypes : [];
+  document.getElementById("around-types").replaceChildren(...types.map((t) => make("li", `${t.type || "Other"} (${t.count ?? 0})`)));
+  const items = Array.isArray(r.items) ? r.items : [];
+  document.getElementById("around-details").hidden = items.length === 0;
+  document.getElementById("around-items").replaceChildren(...items.map((it) =>
+    make("li", [niceDate(it.date) || it.date, it.type, it.status].filter(Boolean).join(" · "))));
+  document.getElementById("around-note").textContent =
+    [r.note, r.asOf && `Newest request we saw: ${niceDate(r.asOf) || r.asOf}.`].filter(Boolean).join(" ");
+}
+
+// "Where this data comes from": each dataset, what it covers, and how fresh it is.
+function renderSources(list) {
+  const items = Array.isArray(list) ? list.filter((x) => x && x.source) : [];
+  document.getElementById("sources").hidden = items.length === 0;
+  document.getElementById("sources-list").replaceChildren(...items.map((x) => {
+    const li = make("li");
+    li.appendChild(make("b", x.source));
+    const parts = [x.covers && `covers ${x.covers}`, `newest record: ${x.asOf ? (niceDate(x.asOf) || x.asOf) : "unknown"}`];
+    li.append(` · ${parts.filter(Boolean).join(", ")}`);
+    if (x.note) li.appendChild(make("small", x.note, "source-note"));
+    return li;
+  }));
 }
