@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import pgh.rentcheck.Models.CategoryCount;
 import pgh.rentcheck.Models.Report;
 import pgh.rentcheck.Models.ReportNeighborhood;
+import pgh.rentcheck.Models.SourceAsOf;
 import pgh.rentcheck.Models.ViolationItem;
 
 import java.time.LocalDate;
@@ -30,6 +31,7 @@ import java.util.Set;
  */
 public class ReportService {
     private static final int MAX_RECORDS = 200;
+    private static final int REQUESTS_311_LIMIT = 300;
 
     private final WprdcClient wprdc;
     private final PropertyService properties;
@@ -106,10 +108,50 @@ public class ReportService {
         // Nothing matched? Offer close spellings, so "no records" doesn't hide a typo.
         List<Suggestions.Suggestion> suggestions = items.isEmpty() ? suggestFor(address) : List.of();
 
+        // Two more city datasets, both keyed on the county parcel id when we have one.
+        // Both are extras: a failure must never stop a report being returned.
+        String parcelId = property == null ? null : property.parcelId();
+        String normalized = AddressNormalizer.normalize(address);
+        Condemned.CondemnedRecord condemned = null;
+        try {
+            condemned = Condemned.from(wprdc.condemned(parcelId, normalized).path("result").path("records"));
+        } catch (Exception e) {
+            System.out.println("[condemned] lookup failed for " + address + ": " + e.getMessage());
+        }
+        Permits.PermitHistory permits = null;
+        try {
+            permits = Permits.from(wprdc.permits(parcelId, normalized).path("result").path("records"),
+                    items.size(), LocalDate.now());
+        } catch (Exception e) {
+            System.out.println("[permits] lookup failed for " + address + ": " + e.getMessage());
+        }
+        String permitsNote = permits == null ? Permits.noPermitsNote(items.size()) : null;
+
+        ReportNeighborhood hood = neighborhoodOf(hoodVotes);
+
+        // 311: what residents have reported around here. Looked up by neighbourhood, so it works
+        // even for addresses we cannot place on a map. Another extra that must never break a report.
+        Requests311.Summary requests311 = null;
+        if (hood != null && hood.name() != null) {
+            try {
+                Requests311.Columns cols = Requests311.detect(
+                        wprdc.requests311Fields().path("result").path("fields"));
+                if (cols.neighborhood() != null) {
+                    requests311 = Requests311.summarize(
+                            wprdc.requests311(cols.neighborhood(), hood.name(), cols.created(), REQUESTS_311_LIMIT)
+                                    .path("result").path("records"),
+                            cols, hood.name(), LocalDate.now());
+                }
+            } catch (Exception e) {
+                System.out.println("[311] lookup failed for " + address + ": " + e.getMessage());
+            }
+        }
+
         return new Report(address, items.size(), open, mostRecent, risk,
                 summarize(items.size(), open, safety, safetyOpen, mostRecent),
                 categorize(items), items, note, Questions.forRecords(items), property,
-                neighborhoodOf(hoodVotes), suggestions);
+                hood, suggestions, condemned, permits, permitsNote, requests311,
+                sources(mostRecent, permits, requests311));
     }
 
     /**
@@ -355,6 +397,45 @@ public class ReportService {
                         "SINGLE FAMILY", 1921, 2.0, 3, 1, 1450, "an individual", null, "AVERAGE", 1,
                         "address", null, "SAMPLE DATA - not a real property."),
                 new ReportNeighborhood("Sample Neighborhood", 12, 2.0, 3, "per1000"),
-                List.of());
+                List.of(), null,
+                Permits.from(sampleParcelRows(), 3, LocalDate.now()), null, null,
+                sources("2025-06-02", Permits.from(sampleParcelRows(), 3, LocalDate.now()), null));
+    }
+
+    /**
+     * Where every number on the page came from, and how fresh it is. We show this because half the
+     * public datasets in this city have quietly stopped updating, and a renter deserves to know
+     * whether they are reading this week's records or 2016's.
+     */
+    static List<SourceAsOf> sources(String newestViolation, Permits.PermitHistory permits,
+                                    Requests311.Summary requests311) {
+        List<SourceAsOf> out = new ArrayList<>();
+        out.add(new SourceAsOf("City code violations (PLI/DOMI/ES)", "2015 to now",
+                newestViolation, "Newest record we found for this address."));
+        out.add(new SourceAsOf("County property assessment", "current tax year", null,
+                "Describes the property for tax purposes; can lag reality and never names the owner."));
+        out.add(new SourceAsOf("City condemned property list", "current", null, "Updated daily."));
+        out.add(new SourceAsOf("City building permits", "June 2019 to now",
+                permits == null ? null : permits.mostRecent(),
+                "Plumbing permits are issued by the county and are not included."));
+        out.add(new SourceAsOf("311 service requests", "March 2025 to now",
+                requests311 == null ? null : requests311.asOf(),
+                "The current 311 system. Published four times a day. Some locations are withheld for privacy."));
+        return out;
+    }
+
+    /** Two made-up permits so the sample report shows the "work done here" card. */
+    private static JsonNode sampleParcelRows() {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().readTree(
+                    "[{\"permit_id\":\"SAMPLE-1\",\"permit_type\":\"Building\",\"work_type\":\"Existing (alteration/addition)\","
+                    + "\"work_description\":\"SAMPLE: replace roof\",\"total_project_value\":14000,"
+                    + "\"issue_date\":\"2025-04-02\",\"status\":\"Completed\"},"
+                    + "{\"permit_id\":\"SAMPLE-2\",\"permit_type\":\"Electrical\",\"work_type\":\"Existing (alteration/addition)\","
+                    + "\"work_description\":\"SAMPLE: rewire second floor\",\"total_project_value\":6000,"
+                    + "\"issue_date\":\"2024-08-11\",\"status\":\"Completed\"}]");
+        } catch (Exception e) {
+            return com.fasterxml.jackson.databind.node.MissingNode.getInstance();
+        }
     }
 }

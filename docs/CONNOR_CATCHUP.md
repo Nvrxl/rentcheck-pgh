@@ -110,3 +110,29 @@ walk, or impossible without crossing the Mon. Real walking and biking times need
 campus hits the same coordinate blocker as section 8: no coordinates for an address unless the city
 has a violation record there.
 
+### 12. CORRECTION: 311 data is NOT dead (shared-file change, Connor please note)
+
+Our `CLAUDE.md` said the city's 311 data stopped in Feb 2025 and not to use it. That was wrong and
+it has been corrected in `CLAUDE.md` - a shared file, hence this note.
+
+Only the OLD archive stopped. The city moved to a new 311 system on 4 Feb 2025 and publishes
+**Pittsburgh 311 Data** (`pittsburgh-311-data`, resource `5202679a-d243-402e-b82a-63189995a942`),
+covering March 2025 to today, updated **four times a day**. Verified Sat Sep 19 2026.
+
+The catch, and it is a real one: the city withholds the exact location of certain complaint types
+for privacy. Those rows can never go on a map or into a "near this address" list, and we do not
+guess where they were.
+
+### 13. Two new report fields, live now (pull first)
+
+- **`condemned`** - almost always null. When it is not, the city has declared the property unfit to
+  live in. Show `warning` at the top of the report in an alert style; it is the most serious thing
+  we can say. The source dataset contains owner names and we deliberately do not expose them.
+- **`permits`** / **`permitsNote`** - building permits since June 2019, with project values,
+  shown against the violation count. Violations are what went wrong; permits are what was fixed
+  properly. When there are no permits, `permitsNote` is already worded carefully (small repairs need
+  no permit, plumbing permits come from the county) - show it as written, do not rephrase it into
+  "this landlord does nothing".
+
+Shapes in `docs/API_CONTRACT.md`.
+

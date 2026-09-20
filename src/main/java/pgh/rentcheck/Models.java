@@ -24,8 +24,16 @@ public final class Models {
             List<String> questions,   // "questions to ask before you sign", chosen from templates
             PropertyService.PropertyFacts property,  // what the COUNTY knows about the building, or null
             ReportNeighborhood neighborhood,  // where this address sits on the neighborhood ranking, or null
-            List<Suggestions.Suggestion> suggestions  // "did you mean?" - only when nothing was found
+            List<Suggestions.Suggestion> suggestions, // "did you mean?" - only when nothing was found
+            Condemned.CondemnedRecord condemned,      // city says unfit to live in, or null (almost always null)
+            Permits.PermitHistory permits,            // work permitted here since June 2019, or null
+            String permitsNote,                       // shown when there are no permits at all
+            Requests311.Summary requests311,          // 311 requests in this neighbourhood, or null
+            List<SourceAsOf> dataAsOf                 // where every number came from, and how fresh it is
     ) {}
+
+    /** One data source behind the report, so the page can show "as of" dates honestly. */
+    public record SourceAsOf(String source, String covers, String asOf, String note) {}
 
     /**
      * Links a report to the Neighborhoods ranking ("In Central Oakland: rank 12").

@@ -242,6 +242,27 @@ public class App {
             ctx.json(out);
         });
 
+        // Shows which 311 columns our run-time detection picked, plus one real row. Use this to
+        // check the detection before trusting anything it produced.
+        app.get("/api/debug/311", ctx -> {
+            JsonNode result = wprdc.requests311Fields().path("result");
+            Requests311.Columns cols = Requests311.detect(result.path("fields"));
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("detectedColumns", cols);
+            List<String> names = new java.util.ArrayList<>();
+            result.path("fields").forEach(f -> names.add(f.path("id").asText()));
+            out.put("allColumns", names);
+            out.put("firstRow", result.path("records").size() > 0 ? result.path("records").get(0) : null);
+            String hood = ctx.queryParam("neighborhood");
+            if (hood != null && !hood.isBlank()) {
+                JsonNode rows = wprdc.requests311(cols.neighborhood(), hood, cols.created(), 200)
+                        .path("result").path("records");
+                out.put("matchedRows", rows.size());
+                out.put("summary", Requests311.summarize(rows, cols, hood, java.time.LocalDate.now()));
+            }
+            ctx.json(out);
+        });
+
         // e.g. /api/debug/property?address=1231 Lakewood St -> what the COUNTY knows about the building
         app.get("/api/debug/property", ctx -> {
             String address = ctx.queryParam("address");

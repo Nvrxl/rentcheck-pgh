@@ -207,6 +207,79 @@ public class WprdcClient {
     }
 
     /**
+     * City of Pittsburgh condemned / dead-end properties (resource id verified Sat Sep 19 2026).
+     * About 3,500 records citywide, updated daily. We look up by county parcel id when we know it,
+     * because that is exact; otherwise by address text.
+     */
+    private static final String CONDEMNED_RESOURCE_ID = "0a963f26-eb4b-4325-bbbc-3ddf6a871410";
+
+    public JsonNode condemned(String parcelId, String normalizedAddress) throws IOException, InterruptedException {
+        return lookup(CONDEMNED_RESOURCE_ID, "parcel_id", parcelId, normalizedAddress, 20);
+    }
+
+    /**
+     * City of Pittsburgh PLI building permits (resource id verified Sat Sep 19 2026).
+     * Daily updates, June 2019 onwards. Note the parcel column is named parcel_num here, not
+     * parcel_id like the other datasets.
+     */
+    private static final String PERMITS_RESOURCE_ID = "f4d1177a-f597-4c32-8cbf-7885f56253f6";
+
+    public JsonNode permits(String parcelId, String normalizedAddress) throws IOException, InterruptedException {
+        return lookup(PERMITS_RESOURCE_ID, "parcel_num", parcelId, normalizedAddress, 100);
+    }
+
+    /**
+     * Shared lookup: an exact filter on the parcel column when we have a parcel id, otherwise a
+     * text search on the address column.
+     */
+    private JsonNode lookup(String resourceId, String parcelField, String parcelId,
+                            String normalizedAddress, int limit) throws IOException, InterruptedException {
+        String url = BASE + "datastore_search?resource_id=" + resourceId + "&limit=" + limit;
+        if (parcelId != null && parcelId.matches("[A-Za-z0-9]{6,20}")) {
+            String filters = "{\"" + parcelField + "\":\"" + parcelId + "\"}";
+            url += "&filters=" + URLEncoder.encode(filters, StandardCharsets.UTF_8);
+        } else if (normalizedAddress != null && !normalizedAddress.isBlank()) {
+            String q = "{\"address\":\"" + normalizedAddress.replace("\\", "\\\\").replace("\"", "\\\"") + "\"}";
+            url += "&q=" + URLEncoder.encode(q, StandardCharsets.UTF_8);
+        } else {
+            return mapper.createObjectNode();
+        }
+        return get(url);
+    }
+
+    /**
+     * Pittsburgh 311 Data - the CURRENT dataset (the city switched systems on 4 Feb 2025; the old
+     * archive stopped then). Resource id verified Sat Sep 19 2026. Published four times a day.
+     */
+    private static final String REQUESTS_311_RESOURCE_ID = "5202679a-d243-402e-b82a-63189995a942";
+
+    /** One row, so we can see the real column names before using any of them. */
+    public JsonNode requests311Fields() throws IOException, InterruptedException {
+        return get(BASE + "datastore_search?resource_id=" + REQUESTS_311_RESOURCE_ID + "&limit=1");
+    }
+
+    /**
+     * 311 requests in a neighbourhood, newest first. We filter by neighbourhood rather than by a
+     * radius because CKAN cannot do radius queries, and because the city withholds the exact
+     * location of some complaint types - so a "within 200m" list would silently drop those.
+     * `neighborhoodField` and `sortField` come from run-time column detection, so they are
+     * whitelisted against the dataset's own field list before being used.
+     */
+    public JsonNode requests311(String neighborhoodField, String neighborhood,
+                                String sortField, int limit) throws IOException, InterruptedException {
+        String url = BASE + "datastore_search?resource_id=" + REQUESTS_311_RESOURCE_ID + "&limit=" + limit;
+        if (neighborhoodField != null && neighborhood != null && !neighborhood.isBlank()) {
+            String filters = "{\"" + neighborhoodField + "\":\""
+                    + neighborhood.replace("\\", "\\\\").replace("\"", "\\\"") + "\"}";
+            url += "&filters=" + URLEncoder.encode(filters, StandardCharsets.UTF_8);
+        }
+        if (sortField != null) {
+            url += "&sort=" + URLEncoder.encode(sortField + " desc", StandardCharsets.UTF_8);
+        }
+        return get(url);
+    }
+
+    /**
      * DEVELOPER HELPER: peek at another WPRDC dataset (e.g. "property-assessments") before we write code
      * against it. Lists its resources and shows the column names plus two example rows of the first
      * queryable one, so we check real column names instead of guessing.

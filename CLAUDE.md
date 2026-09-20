@@ -85,7 +85,11 @@ Run: `mvn compile exec:java` -> http://localhost:7070
   open police-blotter data stopped updating in Nov 2023 and its replacement is a dashboard with no data download,
   so never build or promise a "live crime ranking". Case counts include commercial and mixed-use buildings.
 - The county's open property-assessment data excludes owner names (county ordinance), so "owner matching" is not possible.
-- The city's 311 open data stopped updating in Feb 2025. Don't use it.
+- 311: the OLD archive (`data.wprdc.org/dataset/311-data`) stopped in Feb 2025, but the city moved to a
+  new system and there IS a current dataset, **Pittsburgh 311 Data** (`pittsburgh-311-data`, resource
+  `5202679a-d243-402e-b82a-63189995a942`), covering Mar 2025 to today and published 4x a day. Verified
+  Sat Sep 19 2026. Some complaint types have their location withheld for privacy: those rows are
+  unusable for anything map-based, and we do not guess where they were.
 - We don't scrape or list rentals. "Rentals near you" only shows search links to other sites (`rentalLinks`).
 - The data only covers the City of Pittsburgh. "No records" can mean a clean address, a typo, or an
   address outside the city: never present it as "safe".

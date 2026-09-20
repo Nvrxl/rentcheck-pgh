@@ -42,6 +42,24 @@ Response 200:
     "context": "The county lists this as university or college property for tax purposes, not as housing...",
     "note": "From Allegheny County assessment records..."
   },
+  "requests311": {
+    "neighborhood": "Central Oakland", "total": 300, "recent": 214, "open": 37, "asOf": "2026-09-19",
+    "topTypes": [ { "type": "Potholes", "count": 41 } ],
+    "items": [ { "date": "2026-09-18", "type": "Street Light", "status": "Open" } ],
+    "summary": "Residents made 300 311 requests in Central Oakland...",
+    "note": "311 requests are things RESIDENTS reported to the city in Central Oakland, not problems with this particular building..."
+  },
+  "dataAsOf": [ { "source": "City building permits", "covers": "June 2019 to now", "asOf": "2025-04-02",
+                  "note": "Plumbing permits are issued by the county and are not included." } ],
+  "condemned": null,
+  "permits": {
+    "total": 3, "recent": 2, "totalProjectValue": 41500, "mostRecent": "2025-04-02",
+    "items": [ { "date": "2025-04-02", "type": "Building", "workType": "Existing (alteration/addition)",
+                 "description": "REPLACE ROOF", "projectValue": 14000, "status": "Completed" } ],
+    "summary": "The city has issued 3 building permits here since June 2019...",
+    "note": "City building permits only, and only since June 2019..."
+  },
+  "permitsNote": null,
   "suggestions": [ { "address": "1231 LAKEWOOD ST", "similarityPercent": 87 } ],
   "neighborhood": { "name": "Central Oakland", "rank": 12, "per1000": 0.5, "openRecent": 3, "rankedBy": "per1000" },
   "questions": [
@@ -62,6 +80,11 @@ Response 200:
   - Always show `note` in small text under the card.
 - `neighborhood` (NEW, this is Connor's proposed field, built exactly as proposed) says where the address sits on the Neighborhoods ranking, or `null`. `name` is the city's own neighborhood for the matched records (the most common one, since a corner address can be tagged differently on different cases). `rank`, `per1000`, `openRecent` and `rankedBy` are copied from `/api/neighborhoods`, and any of them can be `null` — while the ranking is still loading, or for a neighborhood that can't be ranked, you get the name and nulls. The report never waits for the ranking to load.
 - `suggestions` (NEW) is "did you mean?": up to 5 real addresses from the city's data that look close to what was typed, best first. **It is only ever non-empty when `totalViolations` is 0**, so show it in the empty state, above or instead of "no records found". Each entry is a normalized address you can put straight back into the search box (`?address=...`). `similarityPercent` never reaches 100, because an exact match would not be a suggestion. If it is empty, keep the existing "no records" wording.
+- **`condemned`** (NEW) is almost always `null`. When it is not, the city has declared the property **unfit for occupancy** - show `warning` prominently, above everything else, in a red/alert style. It is the most serious thing the report can say. Also show `note` (a condemnation can be lifted and the list can lag). `ownerNotFound` is only true when the city specifically could not find the owner; the live data usually uses one combined label, so it is normally false. **The source dataset contains owner names and we deliberately do not expose them** - do not go looking for them.
+- **`permits`** (NEW) is the city's building-permit history for the property, or `null` when there are none. This is the counterweight to the violations list: violations are what went wrong, permits are what was fixed properly. Show `summary`, the `items` table, and `note`. `totalProjectValue` can be `null`.
+- **`permitsNote`** (NEW) is set *instead of* `permits` when there are none, and is already worded carefully (small repairs need no permit, plumbing permits are issued by the county). Show it as-is; do not write your own version, and do not present "no permits" as proof of neglect.
+- **`requests311`** (NEW) is what residents reported to 311 in this address's **neighbourhood**, or `null`. Show it as "Around this address" and keep the framing: it describes the street, not the building. Always show `note`. `open` can be `null` (we only report it when the dataset actually has a status column). Source is the CURRENT 311 system, March 2025 onwards, published four times a day.
+- **`dataAsOf`** (NEW) lists every dataset behind the report with what it covers and the newest record we saw, so the page can show honest "as of" dates. `asOf` can be `null`. Put this at the foot of the report. Half the public datasets in this city have quietly stopped updating, so being explicit here is a feature, not boilerplate.
 - `riskLevel` is one of `LOW`, `MEDIUM`, `HIGH`, `UNKNOWN`. `UNKNOWN` means no records found (NOT "safe").
 - Any field except `query` and the counts may be `null` or empty. The page must handle that.
 - `violations` is newest first. **Each entry is one city CASE**, not one row: the city stores several rows per case (inspection, re-inspection, detail), and the backend merges them. `totalViolations` counts cases.
