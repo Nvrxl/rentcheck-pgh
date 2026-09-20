@@ -85,7 +85,7 @@ Run: `mvn compile exec:java` -> http://localhost:7070
   counts include commercial and mixed-use buildings.
 - Crime data, corrected Sat Sep 19 2026 (an earlier note here was too strong): the old police blotter stopped in
   Nov 2023, but there IS a successor, **Monthly Criminal Activity** (`monthly-criminal-activity-dashboard`,
-  resource `bd41992a-987a-4cca-8798-fbe1cd946b07`) - incident-level NIBRS, Jan 2024 to Apr 2026, monthly. Three
+  resource `bd41992a-987a-4cca-8798-fbe1cd946b07`) - incident-level NIBRS, Jan 2024 to Apr 2026, monthly.
   CHECKED AND REJECTED the same evening: the CKAN datastore IS active for it, but what was ingested is an Excel
   PIVOT TABLE, not the incidents - 42 rows with headers like "Row Labels", "Column Labels", "Grand Total" and
   two unnamed columns. The real incident data must be on another sheet that CKAN never ingested, so reaching it
@@ -95,9 +95,14 @@ Run: `mvn compile exec:java` -> http://localhost:7070
 - The county's open property-assessment data excludes owner names (county ordinance), so "owner matching" is not possible.
 - 311: the OLD archive (`data.wprdc.org/dataset/311-data`) stopped in Feb 2025, but the city moved to a
   new system and there IS a current dataset, **Pittsburgh 311 Data** (`pittsburgh-311-data`, resource
-  `5202679a-d243-402e-b82a-63189995a942`), covering Mar 2025 to today and published 4x a day. Verified
-  Sat Sep 19 2026. Some complaint types have their location withheld for privacy: those rows are
-  unusable for anything map-based, and we do not guess where they were.
+  `5202679a-d243-402e-b82a-63189995a942`), published 4x a day. Verified Sat Sep 19 2026, columns
+  confirmed via /api/debug/311: subject, status, created_date_et, closed_date_et, neighborhood,
+  latitude, longitude. NOTE: the dataset page claims coverage starts Mar 2025, but the real rows go
+  back to at least 2016 - the portal carries historical records from the OLD system too. So never
+  state a coverage window: report the oldest and newest records actually seen. It also includes
+  service requests (permit and parking applications), not only complaints. Some request types have
+  their location withheld for privacy: those rows are unusable for anything map-based, and we do not
+  guess where they were.
 - We don't scrape or list rentals. "Rentals near you" only shows search links to other sites (`rentalLinks`).
 - The data only covers the City of Pittsburgh. "No records" can mean a clean address, a typo, or an
   address outside the city: never present it as "safe".
