@@ -430,9 +430,12 @@ public class ReportService {
         out.add(new SourceAsOf("City building permits", "June 2019 to now",
                 permits == null ? null : permits.mostRecent(),
                 "Plumbing permits are issued by the county and are not included."));
-        out.add(new SourceAsOf("311 service requests", "March 2025 to now",
+        out.add(new SourceAsOf("311 service requests",
+                requests311 == null || requests311.oldest() == null ? "the city's current 311 portal"
+                        : requests311.oldest() + " to " + requests311.asOf() + " (the records we read)",
                 requests311 == null ? null : requests311.asOf(),
-                "The current 311 system. Published four times a day. Some locations are withheld for privacy."));
+                "The city's current 311 portal, published four times a day. It also carries historical "
+                        + "records from the previous system. Some locations are withheld for privacy."));
         return out;
     }
 

@@ -15,9 +15,10 @@ import java.util.Map;
  * Violations and permits describe the BUILDING. 311 describes the street it sits on, which is the
  * other half of what a renter is actually choosing. NO LANGUAGE MODELS: counting and sorting.
  *
- * SOURCE: "Pittsburgh 311 Data" (pittsburgh-311-data), the CURRENT dataset. The city moved to a new
- * 311 system on 4 Feb 2025; the old archive stopped then and is not used here. This one covers
- * March 2025 onwards and is published four times a day. Verified Sat Sep 19 2026.
+ * SOURCE: "Pittsburgh 311 Data" (pittsburgh-311-data), the CURRENT dataset, published four times a
+ * day. The city moved to a new 311 system on 4 Feb 2025, and this portal carries BOTH the new
+ * system's records and historical ones from the old one - we have seen rows from 2016 in it. So we
+ * never claim a start date: we report the oldest and newest records we actually saw.
  *
  * WE LOOK UP BY NEIGHBOURHOOD, NOT BY RADIUS. Two reasons: the city's API cannot do "within X
  * metres", and the city deliberately withholds the exact location of some complaint types for
@@ -49,6 +50,7 @@ public final class Requests311 {
             int recent,             // ...created in the last year
             Integer open,           // still open, or null if the dataset has no status column
             String asOf,            // newest request date we saw (yyyy-MM-dd), or null
+            String oldest,          // oldest request date we saw, so we never claim a coverage window
             List<TypeCount> topTypes,
             List<RequestItem> items,
             String summary,
@@ -113,7 +115,7 @@ public final class Requests311 {
         List<RequestItem> items = new ArrayList<>();
         int recent = 0, open = 0;
         boolean haveStatus = cols.status() != null;
-        String asOf = null;
+        String asOf = null, oldest = null;
 
         for (JsonNode r : rows) {
             String date = day(text(r, cols.created()));
@@ -123,6 +125,7 @@ public final class Requests311 {
             if (date != null) {
                 if (date.compareTo(cutoff) >= 0) recent++;
                 if (asOf == null || date.compareTo(asOf) > 0) asOf = date;
+                if (oldest == null || date.compareTo(oldest) < 0) oldest = date;
             }
             if (type != null) typeCounts.merge(type, 1, Integer::sum);
             if (haveStatus && looksOpen(status)) open++;
@@ -143,13 +146,17 @@ public final class Requests311 {
         });
         List<RequestItem> shown = items.size() > MAX_ITEMS ? new ArrayList<>(items.subList(0, MAX_ITEMS)) : items;
 
-        return new Summary(neighborhood, rows.size(), recent, haveStatus ? open : null, asOf, top, shown,
+        return new Summary(neighborhood, rows.size(), recent, haveStatus ? open : null, asOf, oldest, top, shown,
                 summarize(rows.size(), recent, haveStatus ? open : null, top, neighborhood),
-                "311 requests are things RESIDENTS reported to the city in " + neighborhood
-                        + ", not problems with this particular building. Lots of requests can mean a "
+                "311 requests are things RESIDENTS asked the city for in " + neighborhood
+                        + ", not problems with this particular building. They include service requests such as "
+                        + "permit and parking applications, not only complaints. Lots of requests can mean a "
                         + "neglected street or simply neighbours who report things. The city withholds the "
-                        + "exact location of some complaint types for privacy, so this is a neighbourhood "
-                        + "picture, not a street-by-street one. Data starts March 2025.");
+                        + "exact location of some request types for privacy, so this is a neighbourhood "
+                        + "picture, not a street-by-street one."
+                        + (oldest != null && asOf != null
+                            ? " The records we read here run from " + oldest + " to " + asOf + "."
+                            : ""));
     }
 
     static String summarize(int total, int recent, Integer open, List<TypeCount> top, String neighborhood) {
